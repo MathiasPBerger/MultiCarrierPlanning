@@ -287,7 +287,7 @@ class Data(object):
         else:
             compute_annuity = True
         if compute_annuity:
-            return float(capex_annuity(self.costs_df.loc["CAPEX", "won"], self.other_df.loc["lifetime", "won"], self.other_df.loc["wacc", "won"]))
+            return float(capex_annuity(self.costs_df.loc["CAPEX", "won"], self.other_df.loc["lifetime", "won"], self.other_df.loc["wacc", "won"], self.n_y))
         else:
             return float(self.costs_df.loc["CAPEX", "won"])
         
@@ -298,7 +298,7 @@ class Data(object):
         else:
             compute_annuity = True
         if compute_annuity:
-            return float(capex_annuity(self.costs_df.loc["CAPEX", "woff"], self.other_df.loc["lifetime", "woff"], self.other_df.loc["wacc", "woff"]))
+            return float(capex_annuity(self.costs_df.loc["CAPEX", "woff"], self.other_df.loc["lifetime", "woff"], self.other_df.loc["wacc", "woff"], self.n_y))
         else:
             return float(self.costs_df.loc["CAPEX", "woff"])
 
@@ -309,7 +309,7 @@ class Data(object):
         else:
             compute_annuity = True
         if compute_annuity:
-            return float(capex_annuity(self.costs_df.loc["CAPEX", "pv"], self.other_df.loc["lifetime", "pv"], self.other_df.loc["wacc", "pv"]))
+            return float(capex_annuity(self.costs_df.loc["CAPEX", "pv"], self.other_df.loc["lifetime", "pv"], self.other_df.loc["wacc", "pv"], self.n_y))
         else:
             return float(self.costs_df.loc["CAPEX", "pv"])
 
@@ -320,7 +320,7 @@ class Data(object):
         else:
             compute_annuity = True
         if compute_annuity:
-            return float(capex_annuity(self.costs_df.loc["CAPEX", "PtG"], self.other_df.loc["lifetime", "PtG"], self.other_df.loc["wacc", "PtG"]))
+            return float(capex_annuity(self.costs_df.loc["CAPEX", "PtG"], self.other_df.loc["lifetime", "PtG"], self.other_df.loc["wacc", "PtG"], self.n_y))
         else:
             return float(self.costs_df.loc["CAPEX", "PtG"])
 
@@ -331,7 +331,7 @@ class Data(object):
         else:
             compute_annuity = True
         if compute_annuity:
-            return float(capex_annuity(self.costs_df.loc["CAPEX", "H2_s"], self.other_df.loc["lifetime", "H2_s"], self.other_df.loc["wacc", "H2_s"]))
+            return float(capex_annuity(self.costs_df.loc["CAPEX", "H2_s"], self.other_df.loc["lifetime", "H2_s"], self.other_df.loc["wacc", "H2_s"], self.n_y))
         else:
             return float(self.costs_df.loc["CAPEX", "H2_s"])
         
@@ -342,7 +342,7 @@ class Data(object):
         else:
             compute_annuity = True
         if compute_annuity:
-            return float(capex_annuity(self.costs_df.loc["CAPEX", "batt"], self.other_df.loc["lifetime", "batt"], self.other_df.loc["wacc", "batt"]))
+            return float(capex_annuity(self.costs_df.loc["CAPEX", "batt"], self.other_df.loc["lifetime", "batt"], self.other_df.loc["wacc", "batt"], self.n_y))
         else:
             return float(self.costs_df.loc["CAPEX", "batt"]) 
 
@@ -353,7 +353,7 @@ class Data(object):
         else:
             compute_annuity = True
         if compute_annuity:
-            return float(capex_annuity(self.costs_df.loc["CAPEX", "H2"], self.other_df.loc["lifetime", "H2"], self.other_df.loc["wacc", "H2"]))
+            return float(capex_annuity(self.costs_df.loc["CAPEX", "H2"], self.other_df.loc["lifetime", "H2"], self.other_df.loc["wacc", "H2"], self.n_y))
         else:
             return float(self.costs_df.loc["CAPEX", "H2"])
 
@@ -364,7 +364,7 @@ class Data(object):
         else:
             compute_annuity = True
         if compute_annuity:
-            return float(capex_annuity(self.costs_df.loc["CAPEX", "H2tCH4"], self.other_df.loc["lifetime", "H2tCH4"], self.other_df.loc["wacc", "H2tCH4"]))
+            return float(capex_annuity(self.costs_df.loc["CAPEX", "H2tCH4"], self.other_df.loc["lifetime", "H2tCH4"], self.other_df.loc["wacc", "H2tCH4"], self.n_y))
         else:
             return float(self.costs_df.loc["CAPEX", "H2tCH4"])
 
@@ -375,7 +375,7 @@ class Data(object):
         else:
             compute_annuity = True
         if compute_annuity:
-            return float(capex_annuity(self.costs_df.loc["CAPEX", "CH4_s"], self.other_df.loc["lifetime", "CH4_s"], self.other_df.loc["wacc", "CH4_s"]))
+            return float(capex_annuity(self.costs_df.loc["CAPEX", "CH4_s"], self.other_df.loc["lifetime", "CH4_s"], self.other_df.loc["wacc", "CH4_s"], self.n_y))
         else:
             return float(self.costs_df.loc["CAPEX", "CH4_s"])
 
@@ -386,7 +386,7 @@ class Data(object):
         else:
             compute_annuity = True
         if compute_annuity:
-            return float(capex_annuity(self.costs_df.loc["CAPEX", "ccgt"], self.other_df.loc["lifetime", "ccgt"], self.other_df.loc["wacc", "ccgt"]))
+            return float(capex_annuity(self.costs_df.loc["CAPEX", "ccgt"], self.other_df.loc["lifetime", "ccgt"], self.other_df.loc["wacc", "ccgt"], self.n_y))
         else:
             return float(self.costs_df.loc["CAPEX", "ccgt"])
         
@@ -396,19 +396,7 @@ class Data(object):
 
     @property
     def varsigma_C(self):
-        return float(self.costs_df.loc['OPEX', 'C'])			
-		
-#    @property
-#    def varsigma_C_S(self):
-#        return float(self.costs_df.loc["OPEX", "C_S"])
-
-#    @property
-#    def varsigma_C_W_on(self):
-#        return float(self.costs_df.loc["OPEX", "C_W_on"])
-
-#    @property
-#    def varsigma_C_W_off(self):
-#        return float(self.costs_df.loc["OPEX", "C_W_off"])
+        return float(self.costs_df.loc['OPEX', 'C'])
 
     @property
     def theta_CO2(self):
@@ -420,7 +408,7 @@ class Data(object):
 
     @property
     def theta_W_on_v(self):
-        return float(self.costs_df.loc["OPEX", "won"])
+        return float(self.costs_df.loc["VOM", "won"])
 
     @property
     def theta_W_off_f(self):
@@ -428,7 +416,7 @@ class Data(object):
 
     @property
     def theta_W_off_v(self):
-        return float(self.costs_df.loc["OPEX", "woff"])
+        return float(self.costs_df.loc["VOM", "woff"])
 
     @property
     def theta_S_f(self):
@@ -436,7 +424,7 @@ class Data(object):
 
     @property
     def theta_S_v(self):
-        return float(self.costs_df.loc["OPEX", "pv"])
+        return float(self.costs_df.loc["VOM", "pv"])
 
     @property
     def theta_PtG_f(self):
@@ -452,7 +440,7 @@ class Data(object):
     
     @property
     def theta_B_v(self):
-        return float(self.costs_df.loc["OPEX","batt"])
+        return float(self.costs_df.loc["VOM","batt"])
 
     @property
     def theta_H2_f(self):
@@ -460,7 +448,7 @@ class Data(object):
 
     @property
     def theta_H2_v(self):
-        return float(self.costs_df.loc["OPEX", "H2"])
+        return float(self.costs_df.loc["VOM", "H2"])
 
     @property
     def theta_H2tCH4_f(self):
@@ -476,7 +464,7 @@ class Data(object):
 
     @property
     def theta_NG_v(self):
-        return float(self.costs_df.loc["OPEX","ccgt"])
+        return float(self.costs_df.loc["VOM","ccgt"])
 
     @property
     def theta_NG_fuel(self):
@@ -484,7 +472,7 @@ class Data(object):
 
     @property
     def theta_NK_v(self):
-        return float(self.costs_df.loc["OPEX", "NK"])
+        return float(self.costs_df.loc["VOM", "NK"])
 
     @property
     def theta_NK_fuel(self):
@@ -492,7 +480,7 @@ class Data(object):
 
     @property
     def theta_disp_v(self):
-        return float(self.costs_df.loc["OPEX", "disp"])
+        return float(self.costs_df.loc["VOM", "disp"])
 
     @property
     def theta_disp_fuel(self):
@@ -500,7 +488,7 @@ class Data(object):
 
     @property
     def theta_PH_v(self):
-        return float(self.costs_df.loc["OPEX","PH"])
+        return float(self.costs_df.loc["VOM","PH"])
 
     @property
     def theta_el(self):
@@ -830,9 +818,10 @@ def fetch_elix_index_data(path_datafiles, data_years_input, year_no, data_years_
     return x_r.to_dict()
 
 
-def capex_annuity(capex, lifetime, wacc):
+def capex_annuity(capex, lifetime, wacc, n_y):
     
-    x = wacc*capex/(1-(1+wacc)**(-lifetime))
+    #x = (capex/(1+wacc))*(wacc/(1-(1+wacc)**(-lifetime)))
+    x = n_y*capex/lifetime
     return x
 
 

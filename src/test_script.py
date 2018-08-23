@@ -19,8 +19,8 @@ elif ID == 'dl':
     save_path = "/Users/david/py_workspace/fluxys/model/" 
 	
 elif ID == 'ml':
-    path = "/Users/mathiasberger/Documents/Programming/Python/Fluxys/medpower/data/"
-    save_path = "/Users/mathiasberger/Documents/Programming/Python/Fluxys/medpower/"
+    path = "/Users/mathiasberger/Documents/Programming/Python/MultiCarrierPlanning/data/"
+    save_path = "/Users/mathiasberger/Documents/Programming/Python/MultiCarrierPlanning/"
 
 elif ID == 'mz':
     path = "/home/berger/..."
@@ -31,15 +31,9 @@ def init_folder():
 
     date = strftime("%Y%m%d")
     time = strftime("%H%M")
-    
-    if not isdir("../output"):
-        makedirs("../output")
-        path = "../output/run_"+date+'_'+str(time)
+    path = "../output/run_"+date+'_'+str(time)
+    if not isdir(path):
         makedirs(path)
-    else:
-        path = "../output/run_"+date+'_'+str(time)
-        makedirs(path)
-    
     return path
 	
 folder_path = init_folder()
@@ -49,7 +43,7 @@ data = Data(path)
 model = model_builder(data, folder_path, write_lp=True)
 
 opt = SolverFactory("gurobi", solver_io='python')
-opt.options['MIPGap'] = 0.1
+opt.options['MIPGap'] = 0.05
 #opt.options['Seed'] = 50000
 opt.options['Method'] = 2
 opt.options['OutputFlag'] = 1
@@ -58,7 +52,7 @@ opt.options['LogFile'] = join(folder_path, 'gurobi.log')
 results = opt.solve(model, tee=True, keepfiles=False)
 
 printer = Print(model,data)
-plotter = Plot(model, data)
+plotter = Plot(model, data, save_fig=False)
 
 printer.print_output(folder_path)
 plotter.plot(folder_path)

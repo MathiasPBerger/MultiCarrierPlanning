@@ -306,7 +306,10 @@ def model_builder(data, folder, write_lp=False):
     # Battery Plant
 
     def net_battery_power_definition_rule(model, t):
-        return model.P_B[t] == -model.P_PtB[t] + model.eta_BtP * model.P_BtP[t]
+        if t == 0:
+            return model.P_B[t] == 0
+        else:
+            return model.P_B[t] == -model.P_PtB[t] + model.eta_BtP * model.P_BtP[t]
 
     def battery_SOC_definition_rule(model, t):
         if t == 0:

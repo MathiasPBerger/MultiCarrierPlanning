@@ -32,7 +32,7 @@ class Print(object):
             if str(v) in ['P_W_on', 'P_W_off', 'P_S', 'P_C', 
                   'Delta_P', 'P_PtG', 'P_PtH2', 'E_H2', 'P_H2_out', 'P_H2tP', 
                   'P_H2tCH4', 'P_H2', 'P_CH4', 'E_CH4', 'P_CH4tNG', 'P_NG_PP', 'P_NGtP', 'P_NG', 
-                  'P_NK', 'P_disp', 'P_PtPH', 'P_PHtP', 'P_PH', 'E_PH', 'P_trs']:
+                  'P_NK', 'P_disp', 'P_PtPH', 'P_PHtP', 'P_PH', 'E_PH', 'P_trs', "P_B", "E_B", "P_PtB", "P_BtP"]:
                 for index in varobject:
                     df_ts.loc[index, str(v)] = varobject[index].value
 
@@ -48,7 +48,7 @@ class Print(object):
             varobject = getattr(self.model, str(v))
     
             if str(v) in ['K_W_on', 'K_W_off', 'K_S', 'K_PtG', 'S_H2', 'K_H2', 'K_H2tCH4', 
-                          'S_CH4', 'K_NG']:
+                          'S_CH4', 'K_NG', 'S_B', 'K_B']:
                 for index in varobject:
                     df_cap.loc[str(v), 'value'] = varobject[index].value
 
