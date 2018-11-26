@@ -24,7 +24,7 @@ def model_builder(data, folder, write_lp=False):
     model.T = RangeSet(0, model.t_max-1)
     model.n_y = Param(initialize=data.n_y)
 
-    # Load factor parameters
+    # Capacity factor parameters
     model.gamma_S = Param(model.T, initialize=data.gamma_S)
     model.gamma_W_on = Param(model.T, initialize=data.gamma_W_on)
     model.gamma_W_off = Param(model.T, initialize=data.gamma_W_off)
@@ -54,11 +54,11 @@ def model_builder(data, folder, write_lp=False):
     model.kappa_B = Param(initialize=data.kappa_B)
     model.kappa_NGNet = Param(initialize=data.kappa_NGNet)
     model.kappa_disp = Param(initialize=data.kappa_disp)
-    model.kappa_trs = Param(initialize=data.kappa_trs)
+    model.kappa_IE = Param(initialize=data.kappa_trs)
     model.psi_CO2 = Param(initialize=data.psi_CO2)
 
     # Demand & Curtailment Parameters
-    model.pi_L = Param(model.T, initialize=data.pi_L)
+    model.lambda_E = Param(model.T, initialize=data.pi_L)
     model.pi_NG = Param(model.T, initialize=data.pi_NG)
 
     # Efficiency parameters
@@ -123,7 +123,7 @@ def model_builder(data, folder, write_lp=False):
     model.rho_B = Param(initialize=data.rho_B)
     model.chi_B = Param(initialize=data.chi_B)
     model.mu_disp = Param(initialize=data.mu_disp)
-    model.mu_trs = Param(initialize=data.mu_trs)
+    model.mu_IE = Param(initialize=data.mu_trs)
     model.mu_NK = Param(initialize=data.mu_NK)
     model.nu_NG_CO2 = Param(initialize=data.nu_NG_CO2)
     model.nu_CH4_CO2 = Param(initialize=data.nu_CH4_CO2)
@@ -169,12 +169,12 @@ def model_builder(data, folder, write_lp=False):
     model.P_PH = Var(model.T, within=Reals)
     model.B_PH = Var(model.T, within=Binary)
     model.E_PH = Var(model.T, within=NonNegativeReals)
-    model.P_trs = Var(model.T, within=Reals)
-    model.P_trs_im = Var(model.T, within=NonNegativeReals)
-    model.P_trs_ex = Var(model.T, within=NonNegativeReals)
-    
+    model.P_IE = Var(model.T, within=Reals)
+    model.P_I = Var(model.T, within=NonNegativeReals)
+    model.P_E = Var(model.T, within=NonNegativeReals)
+
     model.V_CO2 = Var(model.T, within = NonNegativeReals)
-    
+
     # Sizing Variables
     model.K_W_on = Var(within=NonNegativeReals)
     model.K_W_off = Var(within=NonNegativeReals)
@@ -196,12 +196,12 @@ def model_builder(data, folder, write_lp=False):
 
     def power_balance_rule(model, t):
         return model.P_S[t] + model.P_W_on[t] + model.P_W_off[t] + model.P_PH[t] + model.P_H2[t] + model.P_NG[t] + model.P_disp[t] +\
-             model.P_NK[t] + model.P_B[t] - model.P_C[t] - model.P_PtG[t] + model.Delta_P[t] + model.P_trs[t] == model.pi_L[t]
+             model.P_NK[t] + model.P_B[t] - model.P_C[t] - model.P_PtG[t] + model.Delta_P[t] + model.P_IE[t] == model.lambda_E[t]
 
     model.power_balance = Constraint(model.T, rule=power_balance_rule)
 
     def unserved_demand_upper_bound_rule(model, t):
-        return model.Delta_P[t] <= model.pi_L[t]
+        return model.Delta_P[t] <= model.lambda_E[t]
 
     model.unserved_demand_upper_bound = Constraint(model.T, rule=unserved_demand_upper_bound_rule)
 
@@ -236,38 +236,23 @@ def model_builder(data, folder, write_lp=False):
 
     def total_curtailment_upper_bound_rule(model, t):
         return model.P_C[t] <= model.P_W_on[t] + model.P_W_off[t] + model.P_S[t]
-	
-#    def total_curtailment_upper_bound_rule(model, t):
-#        return model.P_C[t] <= model.P_W_on[t] + model.P_W_off[t] + model.P_S[t] - model.pi_L[t]
-#
-#    def total_curtailment_definition_rule(model, t):
-#        return model.P_C[t] == model.P_C_p[t] - model.P_C_n[t]
-#    
-#    def positive_curtailment_upper_bound_rule(model, t):
-#        return model.P_C_p[t] <= (model.kappa_S_max + model.kappa_W_on_max + model.kappa_W_off_max) * model.B_C[t]
-#    
-#    def negative_curtailment_upper_bound_rule(model, t):
-#        return model.P_C_n[t] <= (model.kappa_S_max + model.kappa_W_on_max + model.kappa_W_off_max) * (1 - model.B_C[t])
 
     model.total_curtailment_upper_bound = Constraint(model.T, rule=total_curtailment_upper_bound_rule)
-#    model.total_curtailment_definition = Constraint(model.T, rule=total_curtailment_definition_rule)
-#    model.positive_curtailment_upper_bound = Constraint(model.T, rule=positive_curtailment_upper_bound_rule)
-#    model.negative_curtailment_upper_bound = Constraint(model.T, rule=negative_curtailment_upper_bound_rule)
 
     # Electrical Interconnection
 
     def transmission_upper_bound_rule(model, t):
-        return model.P_trs[t] <= model.kappa_trs
-    
+        return model.P_IE[t] <= model.kappa_IE
+
     def transmission_lower_bound_rule(model, t):
-        return -model.kappa_trs <= model.P_trs[t]
+        return -model.kappa_IE <= model.P_IE[t]
 
     def transmission_budget_bound_rule(model):
-        return sum(model.P_trs_im[:]) <= model.mu_trs * sum(model.pi_L[:])
-    
+        return sum(model.P_I[:]) <= model.mu_IE * sum(model.lambda_E[:])
+
     def transmission_definition_rule(model, t):
-        return model.P_trs[t] == model.P_trs_im[t] - model.P_trs_ex[t]
-    
+        return model.P_IE[t] == model.P_I[t] - model.P_E[t]
+
     model.transmission_upper_bound = Constraint(model.T, rule=transmission_upper_bound_rule)
     model.transmission_lower_bound = Constraint(model.T, rule=transmission_lower_bound_rule)
     model.transmission_budget_bound = Constraint(rule=transmission_budget_bound_rule)
@@ -302,7 +287,7 @@ def model_builder(data, folder, write_lp=False):
     model.pumped_hydro_SOC_upper_bound = Constraint(model.T, rule=pumped_hydro_SOC_upper_bound_rule)
     model.pumped_hydro_input_power_upper_bound = Constraint(model.T, rule=pumped_hydro_input_power_upper_bound_rule)
     model.pumped_hydro_output_power_upper_bound = Constraint(model.T, rule=pumped_hydro_output_power_upper_bound_rule)
-    
+
     # Battery Plant
 
     def net_battery_power_definition_rule(model, t):
@@ -325,19 +310,19 @@ def model_builder(data, folder, write_lp=False):
 
     def battery_input_power_upper_bound_rule(model, t):
         return model.eta_PtB * model.P_PtB[t] <= model.rho_B * model.K_B
-    
+
     def battery_output_power_upper_bound_rule(model, t):
         return model.P_BtP[t] <= model.K_B
-    
+
     def battery_input_power_activation_rule(model, t):
         return model.P_PtB[t] <= model.kappa_B * model.B_B[t]
-    
+
     def battery_output_power_activation_rule(model, t):
         return model.P_BtP[t] <= model.kappa_B * (1 - model.B_B[t])
-    
+
     def battery_power_bound_definition_rule(model):
         return model.K_B == model.S_B / model.chi_B
-    
+
     def battery_energy_capacity_upper_bound_rule(model):
         return model.S_B <= model.xi_B
 
@@ -397,7 +382,7 @@ def model_builder(data, folder, write_lp=False):
 
     def repowered_H2_power_definition_rule(model, t):
         return model.P_H2[t] == model.eta_H2tP * model.P_H2tP[t]
-    
+
     def repowered_H2_power_initialisation_rule(model):
         return model.P_H2[0] == 0
 
@@ -534,12 +519,12 @@ def model_builder(data, folder, write_lp=False):
     model.dispatchable_units_dec_ramp_rate = Constraint(model.T, rule=dispatchable_units_dec_ramp_rate_rule)
 
     # CO2 Budget
-            
+
     def yearly_CO2_consumption_rule(model):
         return model.nu_NG_CO2 * sum(model.P_NG_PP[:]) +\
             model.nu_CH4_CO2 * sum(model.P_CH4tNG[:]) +\
-            model.nu_trs_CO2 * sum(model.P_trs[:]) +\
-            model.nu_disp_CO2 * sum(model.P_disp[:]) <= model.psi_CO2
+            model.nu_trs_CO2 * sum(model.P_I[:]) +\
+            model.nu_disp_CO2 * sum(model.P_disp[:]) / model.eta_disp <= model.psi_CO2
 
     model.yearly_CO2_consumption = Constraint(rule=yearly_CO2_consumption_rule)
 
@@ -570,15 +555,14 @@ def model_builder(data, folder, write_lp=False):
             model.theta_CO2 * model.nu_disp_CO2 * sum(model.P_disp[:]) * model.delta_t +\
             model.theta_PH_v * sum(model.P_PtPH[:]) * model.delta_t +\
             model.varsigma_ENS * sum(model.Delta_P[:]) * model.delta_t + model.varsigma_C * sum(model.P_C[:]) * model.delta_t +\
-            sum(model.theta_el[t] * model.P_trs_im[t] * model.delta_t for t in model.T) -\
-            sum(model.theta_el[t] * model.P_trs_ex[t] for t in model.T) +\
+            sum(model.theta_el[t] * model.P_IE[t] * model.delta_t for t in model.T) +\
             model.zeta_B * model.S_B + model.theta_B_f * model.n_y * model.K_B
-            
+
 
     model.cost = Objective(rule=cost_rule, sense=minimize)
 
     dir_run	= folder
-	
+
     if write_lp:
         model.write(filename=join(dir_run, "model.lp"),
             format=ProblemFormat.cpxlp,

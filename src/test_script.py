@@ -52,9 +52,9 @@ opt.options['LogFile'] = join(folder_path, 'gurobi.log')
 results = opt.solve(model, tee=True, keepfiles=False)
 
 printer = Print(model,data)
-plotter = Plot(model, data, save_fig=False)
+#plotter = Plot(model, data, save_fig=False)
 
 printer.print_output(folder_path)
-plotter.plot(folder_path)
+#plotter.plot(folder_path)
 
 postprocessor = PostProcess(data, model)

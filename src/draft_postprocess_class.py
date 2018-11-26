@@ -16,7 +16,7 @@ class PostProcess(object):
         model, data = self.model, self.data
         return model.nu_NG_CO2.value * model.eta_NGtP.value * sum([model.P_NG_PP[i].value for i in data.time]) +\
             model.nu_CH4_CO2.value * model.eta_NGtP.value * sum([model.P_CH4tNG[i].value for i in data.time]) +\
-            model.nu_trs_CO2.value * sum([model.P_trs[i].value for i in data.time]) +\
+            model.nu_trs_CO2.value * sum([model.P_IE[i].value for i in data.time]) +\
             model.nu_disp_CO2.value * sum([model.P_disp[i].value for i in data.time])
     @property
     def CO2_emissions_disp(self):
@@ -36,7 +36,7 @@ class PostProcess(object):
     @property
     def CO2_emissions_trs(self):
         model, data = self.model, self.data
-        return model.nu_trs_CO2.value * sum([model.P_trs[i].value for i in data.time])
+        return model.nu_trs_CO2.value * sum([model.P_IE[i].value for i in data.time])
             
     @property
     def capacity_factor_S(self):
@@ -131,7 +131,7 @@ class PostProcess(object):
     @property
     def capacity_factor_trs(self):
         model, time = self.model, self.data.time
-        return sum([model.P_trs[t].value for t in time]) / (len(time) * model.kappa_trs.value)
+        return sum([model.P_IE[t].value for t in time]) / (len(time) * model.kappa_IE.value)
         
     @property
     def n_cycles_H2s(self):
@@ -154,7 +154,7 @@ class PostProcess(object):
     @property
     def energy_production_total(self):
         model, time = self.model, self.data.time
-        return sum([model.P_S[t].value + model.P_W_on[t].value + model.P_W_off[t].value + model.P_H2[t].value + model.P_disp[t].value + model.P_trs[t].value + model.P_NG[t].value for t in time]) * model.delta_t.value
+        return sum([model.P_S[t].value + model.P_W_on[t].value + model.P_W_off[t].value + model.P_H2[t].value + model.P_disp[t].value + model.P_IE[t].value + model.P_NG[t].value for t in time]) * model.delta_t.value
     
     @property
     def energy_production_S(self):
@@ -194,7 +194,7 @@ class PostProcess(object):
     @property
     def energy_production_trs(self):
         model, time = self.model, self.data.time
-        return sum([model.P_trs[t].value for t in time]) * model.delta_t.value
+        return sum([model.P_IE[t].value for t in time]) * model.delta_t.value
     
     @property
     def energy_production_NG(self):
@@ -335,6 +335,20 @@ class PostProcess(object):
         return self.CAPEX_H2tCH4 + self.FOM_H2tCH4
     
     @property
+    def CAPEX_B(self):
+        model = self.model
+        return model.zeta_B.value * model.S_B.value
+    
+    @property
+    def FOM_B(self):
+        model = self.model
+        return model.theta_B_f.value * model.K_B.value
+    
+    @property
+    def total_cost_B(self):
+        return self.CAPEX_B + self.FOM_B
+    
+    @property
     def CAPEX_CH4s(self):
         model = self.model
         return model.zeta_CH4.value * model.S_CH4.value
@@ -408,7 +422,7 @@ class PostProcess(object):
     @property
     def total_cost_trs(self):
         model, theta_el, time = self.model, self.data.theta_el, self.data.time
-        return sum([theta_el[t] * model.P_trs[t].value for t in time]) * model.delta_t.value
+        return sum([theta_el[t] * model.P_IE[t].value for t in time]) * model.delta_t.value
     
     @property
     def total_cost(self):
@@ -417,10 +431,10 @@ class PostProcess(object):
     @property
     def budget_trs(self):
         model, time = self.model, self.data.time
-        if sum([model.P_trs[t].value for t in time]) != 0:
-            return sum([model.P_trs[t].value for t in time]) / sum([model.pi_L[t] for t in time])
+        if sum([model.P_IE[t].value for t in time]) != 0:
+            return sum([model.P_IE[t].value for t in time]) / sum([model.lambda_E[t] for t in time])
         else:
-            print("%s energy transmitted, no interconnection energy budget can be computed." % sum([model.P_trs[t].value for t in time]))
+            print("%s energy transmitted, no interconnection energy budget can be computed." % sum([model.P_IE[t].value for t in time]))
             return 0
         
     @property

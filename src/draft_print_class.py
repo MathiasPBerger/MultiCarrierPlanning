@@ -32,14 +32,14 @@ class Print(object):
             if str(v) in ['P_W_on', 'P_W_off', 'P_S', 'P_C', 
                   'Delta_P', 'P_PtG', 'P_PtH2', 'E_H2', 'P_H2_out', 'P_H2tP', 
                   'P_H2tCH4', 'P_H2', 'P_CH4', 'E_CH4', 'P_CH4tNG', 'P_NG_PP', 'P_NGtP', 'P_NG', 
-                  'P_NK', 'P_disp', 'P_PtPH', 'P_PHtP', 'P_PH', 'E_PH', 'P_trs', "P_B", "E_B", "P_PtB", "P_BtP"]:
+                  'P_NK', 'P_disp', 'P_PtPH', 'P_PHtP', 'P_PH', 'E_PH', 'P_IE', "P_B", "E_B", "P_PtB", "P_BtP"]:
                 for index in varobject:
                     df_ts.loc[index, str(v)] = varobject[index].value
 
         for p in self.model.component_objects(Param, active=True):
             paramobject = getattr(self.model, str(p))
     
-            if str(p) in ['pi_L', 'pi_NG', 'kappa_NK', 'kappa_NG_0', 'theta_el']:
+            if str(p) in ['lambda_E', 'pi_NG', 'kappa_NK', 'kappa_NG_0', 'theta_el']:
                 for index in paramobject:
                     df_ts.loc[index, str(p)] = paramobject[index]   
                 
@@ -54,7 +54,7 @@ class Print(object):
 
         for p in self.model.component_objects(Param, active=True):
             
-            if str(p) not in ['gamma_S', 'gamma_W_on', 'gamma_W_off', 'gamma_L', 'pi_L', 'pi_NG',
+            if str(p) not in ['gamma_S', 'gamma_W_on', 'gamma_W_off', 'gamma_L', 'lambda_E', 'pi_NG',
                               'kappa_NK', 'kappa_NG_0', 'theta_el']:
                 df_cap.loc[str(p), 'value'] = value(p)
                 
