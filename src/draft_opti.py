@@ -552,7 +552,7 @@ def model_builder(data, folder, write_lp=False):
             model.theta_NK_fuel * sum(model.P_NK[:]) * model.delta_t / model.eta_NK +\
             model.theta_disp_v * sum(model.P_disp[:]) * model.delta_t +\
             model.theta_disp_fuel * sum(model.P_disp[:]) * model.delta_t / model.eta_disp +\
-            model.theta_CO2 * model.nu_disp_CO2 * sum(model.P_disp[:]) * model.delta_t +\
+            model.theta_CO2 * model.nu_disp_CO2 * sum(model.P_disp[:]) * model.delta_t / model.eta_disp +\
             model.theta_PH_v * sum(model.P_PtPH[:]) * model.delta_t +\
             model.varsigma_ENS * sum(model.Delta_P[:]) * model.delta_t + model.varsigma_C * sum(model.P_C[:]) * model.delta_t +\
             sum(model.theta_el[t] * model.P_IE[t] * model.delta_t for t in model.T) +\

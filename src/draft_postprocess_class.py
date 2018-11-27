@@ -14,10 +14,10 @@ class PostProcess(object):
     @property
     def CO2_emissions(self):
         model, data = self.model, self.data
-        return model.nu_NG_CO2.value * model.eta_NGtP.value * sum([model.P_NG_PP[i].value for i in data.time]) +\
-            model.nu_CH4_CO2.value * model.eta_NGtP.value * sum([model.P_CH4tNG[i].value for i in data.time]) +\
+        return model.nu_NG_CO2.value * sum([model.P_NG_PP[i].value for i in data.time]) +\
+            model.nu_CH4_CO2.value * sum([model.P_CH4tNG[i].value for i in data.time]) +\
             model.nu_trs_CO2.value * sum([model.P_IE[i].value for i in data.time]) +\
-            model.nu_disp_CO2.value * sum([model.P_disp[i].value for i in data.time])
+            model.nu_disp_CO2.value * sum([model.P_disp[i].value for i in data.time]) / model.eta_disp.value
     @property
     def CO2_emissions_disp(self):
         model, data = self.model, self.data
@@ -26,12 +26,12 @@ class PostProcess(object):
     @property
     def CO2_emissions_NG(self):
         model, data = self.model, self.data
-        return model.nu_NG_CO2.value * model.eta_NGtP.value * sum([model.P_NG_PP[i].value for i in data.time])
+        return model.nu_NG_CO2.value * sum([model.P_NG_PP[i].value for i in data.time])
     
     @property
     def CO2_emissions_CH4(self):
         model, data = self.model, self.data
-        return model.nu_CH4_CO2.value * model.eta_NGtP.value * sum([model.P_CH4tNG[i].value for i in data.time])
+        return model.nu_CH4_CO2.value * sum([model.P_CH4tNG[i].value for i in data.time])
     
     @property
     def CO2_emissions_trs(self):
@@ -276,7 +276,7 @@ class PostProcess(object):
     @property
     def FOM_PtG(self):
         model = self.model
-        return model.theta_PtG_f.value * model.K_PtG.value
+        return model.theta_PtG_f.value * model.n_y.value * model.K_PtG.value
     
     #@property
     #def OPEX_PtG(self):
@@ -295,7 +295,7 @@ class PostProcess(object):
     @property
     def FOM_H2(self):
         model = self.model
-        return model.theta_H2_f.value * model.K_H2.value
+        return model.theta_H2_f.value * model.n_y.value * model.K_H2.value
     
     @property
     def OPEX_H2(self):
@@ -314,7 +314,7 @@ class PostProcess(object):
     @property
     def FOM_H2s(self):
         model = self.model
-        return model.theta_H2_s_f.value * model.S_H2.value
+        return model.theta_H2_s_f.value * model.n_y.value * model.S_H2.value
     
     @property
     def total_cost_H2s(self):
@@ -328,7 +328,7 @@ class PostProcess(object):
     @property
     def FOM_H2tCH4(self):
         model = self.model
-        return model.theta_H2tCH4_f.value * model.K_H2tCH4.value
+        return model.theta_H2tCH4_f.value * model.n_y.value * model.K_H2tCH4.value
     
     @property
     def total_cost_H2tCH4(self):
@@ -342,7 +342,7 @@ class PostProcess(object):
     @property
     def FOM_B(self):
         model = self.model
-        return model.theta_B_f.value * model.K_B.value
+        return model.theta_B_f.value * model.n_y.value * model.K_B.value
     
     @property
     def total_cost_B(self):
@@ -356,7 +356,7 @@ class PostProcess(object):
     @property
     def FOM_CH4s(self):
         model = self.model
-        return model.theta_CH4_f.value * model.S_CH4.value
+        return model.theta_CH4_f.value * model.n_y.value * model.S_CH4.value
     
     @property
     def total_cost_CH4s(self):
@@ -370,20 +370,20 @@ class PostProcess(object):
     @property
     def FOM_NG(self):
         model = self.model
-        return model.theta_PtG_f.value * model.K_NG.value
+        return model.theta_PtG_f.value * model.n_y.value * model.K_NG.value
     
     @property
     def OPEX_NG(self):
         model, time = self.model, self.data.time
         return model.theta_NG_v.value * sum([model.P_NG[t].value for t in time]) * model.delta_t.value +\
             model.theta_NG_fuel.value * sum([model.P_NG_PP[t].value for t in time]) * model.delta_t.value +\
-            model.theta_CO2.value * model.nu_NG_CO2.value * model.eta_NGtP.value * sum([model.P_NG_PP[t].value for t in time]) * model.delta_t.value +\
-            model.theta_CO2.value * model.nu_CH4_CO2.value * model.eta_NGtP.value * sum([model.P_CH4tNG[t].value for t in time]) * model.delta_t.value
+            model.theta_CO2.value * model.nu_NG_CO2.value * sum([model.P_NG_PP[t].value for t in time]) * model.delta_t.value +\
+            model.theta_CO2.value * model.nu_CH4_CO2.value * sum([model.P_CH4tNG[t].value for t in time]) * model.delta_t.value
             
     @property
     def CO2_costs_NG(self):
         model, time = self.model, self.data.time
-        return model.theta_CO2.value * model.nu_NG_CO2.value * model.eta_NGtP.value * sum([model.P_NG_PP[t].value for t in time]) * model.delta_t.value
+        return model.theta_CO2.value * model.nu_NG_CO2.value * sum([model.P_NG_PP[t].value for t in time]) * model.delta_t.value
     
     @property
     def total_cost_NG(self):
@@ -393,16 +393,16 @@ class PostProcess(object):
     def OPEX_disp(self):
         model, time = self.model, self.data.time
         return (model.theta_disp_v.value + model.theta_disp_fuel.value / model.eta_disp +\
-            model.theta_CO2.value * model.nu_disp_CO2.value) * sum([model.P_disp[t].value for t in time]) * model.delta_t.value
+            model.theta_CO2.value * model.nu_disp_CO2.value / model.eta_disp.value) * sum([model.P_disp[t].value for t in time]) * model.delta_t.value
                 
     @property
     def CO2_costs_disp(self):
         model, time = self.model, self.data.time
-        return model.theta_CO2.value * model.nu_disp_CO2.value * sum([model.P_disp[t].value for t in time]) * model.delta_t.value
+        return model.theta_CO2.value * model.nu_disp_CO2.value * sum([model.P_disp[t].value for t in time]) * model.delta_t.value / model.eta_disp.value
     
     @property
     def total_cost_disp(self):
-        return self.OPEX_disp + self.CO2_costs_disp
+        return self.OPEX_disp
     
     @property
     def OPEX_PH(self):
@@ -426,15 +426,15 @@ class PostProcess(object):
     
     @property
     def total_cost(self):
-        return self.total_cost_S + self.total_cost_W_on + self.total_cost_W_off + self.total_cost_PtG + self.total_cost_H2s + self.total_cost_H2tCH4 + self.total_cost_CH4s + self.total_cost_disp + self.total_cost_NG + self.OPEX_PH + self.OPEX_ENS + self.OPEX_C + self.total_cost_trs
+        return self.total_cost_S + self.total_cost_W_on + self.total_cost_W_off + self.total_cost_PtG + self.total_cost_H2 + self.total_cost_H2s + self.total_cost_H2tCH4 + self.total_cost_CH4s + self.total_cost_disp + self.total_cost_NG + self.OPEX_PH + self.total_cost_B + self.OPEX_ENS + self.OPEX_C + self.total_cost_trs 
     
     @property
     def budget_trs(self):
         model, time = self.model, self.data.time
-        if sum([model.P_IE[t].value for t in time]) != 0:
-            return sum([model.P_IE[t].value for t in time]) / sum([model.lambda_E[t] for t in time])
+        if sum([model.P_I[t].value for t in time]) != 0:
+            return sum([model.P_I[t].value for t in time]) / sum([model.lambda_E[t] for t in time])
         else:
-            print("%s energy transmitted, no interconnection energy budget can be computed." % sum([model.P_IE[t].value for t in time]))
+            print("%s energy imported, no interconnection energy budget can be computed." % sum([model.P_I[t].value for t in time]))
             return 0
         
     @property
