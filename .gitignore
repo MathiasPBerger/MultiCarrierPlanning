@@ -5,3 +5,4 @@ data
 src/some_plots_mathias_david_mathias.py
 output
 src/.idea*
+src/workspace.py

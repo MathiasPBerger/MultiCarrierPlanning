@@ -7,7 +7,7 @@ Created on Mon Mar 26 13:47:51 2018
 """
 
 import pandas as pd
-from numpy import isnan, asarray, arange, split, repeat, tile, multiply
+from numpy import isnan, asarray, arange, split, repeat, tile, multiply, where
 from datetime import datetime
 import itertools
 import os
@@ -29,7 +29,7 @@ class Data(object):
         self.costs_path = path + "/" + "costs" + "/"
         self.other_path = path + "/" + "other" + "/"
         self.elprice_path = path + "/" + "el_price" + "/"
-        self.gas_path = path + "/" + "gas" + "/"
+        self.gas_HIDM_path = path + "/" + "gas_HIDM" + "/"
         self.timeseries_path = path + "/" + "timeseries" + "/"
 
         self.scenario = scenario
@@ -42,30 +42,23 @@ class Data(object):
 
     @property
     def gamma_S(self):
-        dict_tmp = fetch_elia_generation_data(self.solar_path, data_years_input = self.n_input, 
+        return fetch_elia_generation_data(self.solar_path, data_years_input = self.n_input, 
                                               year_no = year_selection(self.time_path), data_years_output = self.n_y)
-        return dict(zip(self.time, _to_float(list(asarray(list(dict_tmp.values()))))))
-
 
     @property
     def gamma_W_on(self):
-        dict_tmp = fetch_elia_generation_data(self.w_on_path, data_years_input = self.n_input, 
+        return fetch_elia_generation_data(self.w_on_path, data_years_input = self.n_input, 
                                               year_no = year_selection(self.time_path), data_years_output = self.n_y)
-        return dict(zip(self.time, _to_float(list(asarray(list(dict_tmp.values()))))))
-
     
     @property
     def gamma_W_off(self):
-        dict_tmp = fetch_elia_generation_data(self.w_off_path, data_years_input = self.n_input, 
+        return fetch_elia_generation_data(self.w_off_path, data_years_input = self.n_input, 
                                               year_no = year_selection(self.time_path), data_years_output = self.n_y)
-        return dict(zip(self.time, _to_float(list(asarray(list(dict_tmp.values()))))))
-    
     
     @property
     def gamma_L(self):
-        dict_tmp = fetch_elia_load_data(self.load_path, data_years_input = self.n_input, 
+        return fetch_elia_load_data(self.load_path, data_years_input = self.n_input, 
                                               year_no = year_selection(self.time_path), data_years_output = self.n_y)
-        return dict(zip(self.time, _to_float(list(asarray(list(dict_tmp.values()))))))
 
     @property
     def n_y(self):
@@ -77,7 +70,7 @@ class Data(object):
 
     @property
     def T(self):
-        return self.time_df.loc["value", "T"]
+        return int(self.time_df.loc["value", "T"])
 
     @property
     def t_max(self):
@@ -86,24 +79,50 @@ class Data(object):
     @property
     def delta_t(self):
         return float(self.time_df.loc["value", "delta_t"])
+    
+    @property
+    def n_delta_t(self):
+        return int(24/self.delta_t)
+
+    @property
+    def n_weeks(self):
+        return int(self.t_max/168)
 
     @property
     def time(self):
         t_vec = [t for t in range(self.T)]
         return t_vec
+    
+    @property
+    def time_d(self):
+        t_vec = self.time
+        t_d_vec = set([24*int(t/24) for t in t_vec])
+        #t_d_vec.sort()
+        return t_d_vec
 
     @property
     def kappa_L(self):
         return float(self.capacities_df.loc["load",self.scenario])
     
     @property
-    def growth_rate(self):
+    def growth_rate_E(self):
         return float(self.other_df.loc['growth', 'load'])
 
     @property
-    def pi_L(self):
-        dict_tmp = build_peakload_timeseries(self.n_y, self.kappa_L, self.growth_rate)
-        return dict(zip(self.time, _to_float(list(multiply(asarray(list(self.gamma_L.values())), asarray(list(dict_tmp.values())))))))
+    def lambda_E(self):
+        return dict(self.gamma_L.multiply(build_peakload_timeseries(self.n_y, self.kappa_L, self.growth_rate_E), axis=0))
+
+    @property
+    def COP(self):
+        return float(self.other_df.loc['COP', 'HP'])
+
+    @property
+    def lambda_E_HT(self):
+        return fetch_electric_heating_data(self.timeseries_path, self.n_y, self.COP)
+    
+    @property
+    def lambda_E_TR(self):
+        return fetch_electric_transport_data(self.timeseries_path+'ev_profile_electric/', self.n_input, year_selection(self.time_path), self.n_y, self.t_max, self.n_delta_t)
 
     @property
     def kappa_W_on_0(self):
@@ -134,67 +153,105 @@ class Data(object):
         return float(self.capacities_df.loc["NGNet",self.scenario])
 
     @property
-    def kappa_NG_0(self):
-        y_list, p_list = fetch_timeseries_data(self.timeseries_path+"gas_capacity/")
-        return build_capacity_timeseries(y_list, p_list, self.n_y)
+    def kappa_NG_I(self):
+        return float(self.capacities_df.loc["NG_I",self.scenario])
+
+    @property
+    def kappa_OCGT_0(self):
+        # y_list, p_list = fetch_timeseries_data(self.timeseries_path+"ocgt_capacity/")
+        # return build_timeseries(y_list, p_list, self.n_y)
+
+        return float(self.capacities_df.loc["OCGT", self.scenario])
+    
+    @property
+    def kappa_CCGT_0(self):
+        # y_list, p_list = fetch_timeseries_data(self.timeseries_path+"ccgt_capacity/")
+        # return build_timeseries(y_list, p_list, self.n_y)
+
+        return float(self.capacities_df.loc["CCGT", self.scenario])
 
     @property
     def kappa_NG_max(self):
         return float(self.capacities_df.loc["NG_max",self.scenario])
 
+    # @property
+    # def kappa_NK(self):
+    #     y_list, p_list = fetch_timeseries_data(self.timeseries_path+"nuclear_capacity/")
+    #     return build_timeseries(y_list, p_list, self.n_y)
+
     @property
     def kappa_NK(self):
-        y_list, p_list = fetch_timeseries_data(self.timeseries_path+"nuclear_capacity/")
-        return build_capacity_timeseries(y_list, p_list, self.n_y)
+        return float(self.capacities_df.loc["NK",self.scenario])
 
     @property
-    def pi_NG(self):
-        dict_tmp = fetch_fluxys_demand_data(self.gas_path, data_years_input = self.n_input, 
-                                              year_no = year_selection(self.time_path), data_years_output=self.n_y)
-        return dict(zip(self.time, _to_float(list(asarray(list(dict_tmp.values()))))))
+    def kappa_E(self):
+        return sum(self.lambda_E.values()) + sum(self.lambda_E_TR.values()) + sum(self.lambda_E_HT.values())
+
+    @property
+    def lambda_NG_HT(self):
+        return fetch_fluxys_demand_data(self.gas_HIDM_path, data_years_input = self.n_input, 
+                                              year_no = year_selection(self.time_path), data_years_output=self.n_y,
+                                              client_type='residential')
+
+    @property
+    def lambda_NG_ID(self):
+        return fetch_fluxys_demand_data(self.gas_HIDM_path, data_years_input = self.n_input,
+                                              year_no = year_selection(self.time_path), data_years_output=self.n_y,
+                                              client_type='industry')
+        
+    @property
+    def lambda_NGtH2(self):
+        return dict.fromkeys(arange(0, self.t_max), self.capacities_df.loc["NGtH2_0", self.scenario])
+    
+    @property
+    def lambda_NG_TR(self):
+        return fetch_gas_markets_data(self.timeseries_path+"NG_transport/", data_years_input = self.n_input,
+                                      year_no = year_selection(self.time_path), data_years_output = self.n_y, 
+                                      vol_multiple = self.capacities_df.loc["NGtransport", self.scenario],
+                                      price_multiple = self.other_df.loc['price', 'NGtrs'])[0]
     
 #    @property
-#    def pi_W_on(self):
-#        return dict(zip(self.time, _to_float(list(asarray(list(self.gamma_W_on.values()))*self.kappa_W_on_max))))
-#    
-#    @property
-#    def pi_W_off(self):
-#        return dict(zip(self.time, _to_float(list(asarray(list(self.gamma_W_off.values()))*self.kappa_W_off_max))))
-#    
-#    @property
-#    def pi_S(self):
-#        return dict(zip(self.time, _to_float(list(asarray(list(self.gamma_S.values()))*self.kappa_S_max))))
-#
-#    @property
-#    def pi_C(self):
-#        prod_W_on, prod_W_off, prod_S, cons_L = self.pi_W_on, self.pi_W_off, self.pi_S, self.pi_L
-#        surplus, C_list = [prod_W_on[t]+prod_W_off[t]+prod_S[t]-cons_L[t] for t in range(len(prod_W_on))], []
-#        for v in surplus:
-#            if v >= 0:
-#                C_list.append(v)
-#            else:
-#                C_list.append(0)
-#        return dict(zip(self.time, C_list))
+#    def lambda_NG_TR(self):
+#        return fetch_gas_transit_data(self.timeseries_path+"NG_transit/", data_years_input = self.n_input,
+#                                      year_no = year_selection(self.time_path), data_years_output = self.n_y)
 
     @property
-    def kappa_PtG(self):
-        return float(self.capacities_df.loc["PtG",self.scenario])
+    def lambda_H2_TR(self):
+        return fetch_gas_markets_data(self.timeseries_path+"H2_transport/", data_years_input = self.n_input,
+                                      year_no = year_selection(self.time_path), data_years_output = self.n_y, 
+                                      vol_multiple = self.capacities_df.loc["H2transport", self.scenario],
+                                      price_multiple = self.other_df.loc['price', 'H2trs'])[0]
+    
+    @property
+    def lambda_H2_ID(self):
+        return fetch_gas_markets_data(self.timeseries_path+"H2_industry/", data_years_input = self.n_input,
+                                      year_no = year_selection(self.time_path), data_years_output = self.n_y, 
+                                      vol_multiple = self.capacities_df.loc["H2industry", self.scenario], 
+                                      price_multiple = self.other_df.loc['price', 'H2ind'])[0]
+    
+    @property
+    def kappa_EL(self):
+        return float(self.capacities_df.loc["EL",self.scenario])
 
     @property
-    def xi_H2(self):
-        return float(self.capacities_df.loc["H2_s",self.scenario])
+    def kappa_FC(self):
+        return float(self.capacities_df.loc["FC",self.scenario])
+    
+    @property
+    def xi_H2S(self):
+        return float(self.capacities_df.loc["H2S",self.scenario])
 
     @property
-    def kappa_H2(self):
-        return float(self.capacities_df.loc["H2",self.scenario])
+    def kappa_H2S(self):
+        return float(self.capacities_df.loc["P_H2S",self.scenario])
 
     @property
-    def kappa_H2tCH4(self):
-        return float(self.capacities_df.loc["H2tCH4",self.scenario])
+    def kappa_MT(self):
+        return float(self.capacities_df.loc["MT",self.scenario])
 
     @property
     def xi_CH4(self):
-        return float(self.capacities_df.loc["CH4_s",self.scenario])
+        return float(self.capacities_df.loc["CH4S",self.scenario])
 
     @property
     def kappa_CH4tNG(self):
@@ -217,6 +274,14 @@ class Data(object):
         return float(self.capacities_df.loc["PH_e", self.scenario])
     
     @property
+    def kappa_NGS(self):
+        return float(self.capacities_df.loc["P_NGS", self.scenario])
+    
+    @property
+    def xi_NGS(self):
+        return float(self.capacities_df.loc["NGS", self.scenario])
+    
+    @property
     def xi_B(self):
         return float(self.capacities_df.loc["batt_e", self.scenario])
     
@@ -225,48 +290,137 @@ class Data(object):
         return float(self.capacities_df.loc["batt_p", self.scenario])
 
     @property
-    def kappa_trs(self):
+    def kappa_IE(self):
         return float(self.capacities_df.loc["trs",self.scenario])
 
     @property
-    def kappa_disp(self):
-        return float(self.capacities_df.loc["disp",self.scenario])
+    def kappa_H2_I_size(self):
+        return float(self.capacities_df.loc["H2_I_size",self.scenario])
+
+    @property
+    def kappa_H2_I_freq(self):
+        return float(self.capacities_df.loc["H2_I_freq",self.scenario])
+
+    @property
+    def kappa_H2_I(self):
+        return build_hydrogen_supply_profile(self.n_input, self.n_y,
+                                             tanker_size=self.kappa_H2_I_size, tankers_per_week=self.kappa_H2_I_freq, hours_to_discharge=24, start_year=2014)
+
+    @property
+    def kappa_CO2_E(self):
+        return float(self.capacities_df.loc["CO2_trs",self.scenario])
+    
+    @property
+    def kappa_SMR(self):
+        return float(self.capacities_df.loc["SMR",self.scenario])
+
+    @property
+    def kappa_CHP(self):
+        return float(self.capacities_df.loc["CHP",self.scenario])
+    
+    @property
+    def kappa_BM(self):
+        return float(self.capacities_df.loc["biomass",self.scenario])
+    
+    @property
+    def kappa_WS(self):
+        return float(self.capacities_df.loc["waste",self.scenario])
 
     @property
     def psi_CO2(self):
-        return float(self.capacities_df.loc["co2_budget",self.scenario])
+        return float(self.capacities_df.loc["co2_budget",self.scenario] * self.n_input)
+
+    @property
+    def xi_CO2S(self):
+        return float(self.capacities_df.loc["CO2S", self.scenario])
+
+    @property
+    def kappa_CO2S(self):
+        return float(self.capacities_df.loc["Q_CO2S",self.scenario])
+    
+    @property
+    def kappa_L_E_ENS(self):
+        return float(self.capacities_df.loc["ENS_E", self.scenario])
+    
+    @property
+    def kappa_L_NG_ENS(self):
+        return float(self.capacities_df.loc["ENS_NG", self.scenario])
+    
+    @property
+    def kappa_L_H2_ENS(self):
+        return float(self.capacities_df.loc["ENS_H2", self.scenario])
+    
+    @property
+    def kappa_CO2_OCGT_CCS(self):
+        return float(self.capacities_df.loc["OCGT_CCS", self.scenario])
+    
+    @property
+    def kappa_CO2_CCGT_CCS(self):
+        return float(self.capacities_df.loc["CCGT_CCS", self.scenario])
+    
+    @property
+    def kappa_CO2_CHP_CCS(self):
+        return float(self.capacities_df.loc["CHP_CCS", self.scenario])
+    
+    @property
+    def kappa_CO2_BM_CCS(self):
+        return float(self.capacities_df.loc["BM_CCS", self.scenario])
+    
+    @property
+    def kappa_CO2_WS_CCS(self):
+        return float(self.capacities_df.loc["WS_CCS", self.scenario])
+    
+    @property
+    def kappa_CO2_SMR_CCS(self):
+        return float(self.capacities_df.loc["SMR_CCS", self.scenario])
+
+    @property
+    def kappa_CO2_ACC(self):
+        return float(self.capacities_df.loc["kappa_ACC",self.scenario])
 
     @property
     def eta_NK(self):
         return float(self.efficiencies_df.loc["EFF_OUT", "NK"])
 
     @property
-    def eta_H2tP(self):
-        return float(self.efficiencies_df.loc["EFF_OUT", "H2"])
+    def eta_FC(self):
+        return float(self.efficiencies_df.loc["EFF_OUT", "FC"])
 
     @property
-    def eta_NGtP(self):
-        return float(self.efficiencies_df.loc["EFF_OUT", "ocgt"])
+    def eta_OCGT(self):
+        return float(self.efficiencies_df.loc["EFF_OUT", "OCGT"])
+    
+    @property
+    def eta_CCGT(self):
+        return float(self.efficiencies_df.loc["EFF_OUT", "CCGT"])
+    
+#    @property
+#    def eta_NGtPH(self):
+#        return float(self.efficiencies_df.loc["EFF_TOT", "ccgt"])
+    
+    @property
+    def eta_NG_CCS(self):
+        return float(self.efficiencies_df.loc["EFF_CCS", "OCGT"])
     
     @property
     def eta_B(self):
-        return float(self.efficiencies_df.loc["EFF_SELF", "batt_s"])
+        return float(self.efficiencies_df.loc["EFF_SELF", "B"])
     
     @property
     def eta_PtB(self):
-        return float(self.efficiencies_df.loc["EFF_IN", "batt_s"])
+        return float(self.efficiencies_df.loc["EFF_IN", "B"])
     
     @property
     def eta_BtP(self):
-        return float(self.efficiencies_df.loc["EFF_OUT", "batt_s"])
+        return float(self.efficiencies_df.loc["EFF_OUT", "B"])
 
     @property
-    def eta_PtG(self):
-        return float(self.efficiencies_df.loc["EFF_OUT", "PtG"])
+    def eta_EL(self):
+        return float(self.efficiencies_df.loc["EFF_OUT", "EL"])
 
     @property
-    def eta_H2tCH4(self):
-        return float(self.efficiencies_df.loc["EFF_OUT", "H2tCH4"])
+    def eta_MT(self):
+        return float(self.efficiencies_df.loc["EFF_OUT", "MT"])
 
     @property
     def eta_PHtP(self):
@@ -275,234 +429,513 @@ class Data(object):
     @property
     def eta_PtPH(self):
         return float(self.efficiencies_df.loc["EFF_IN", "PH"])
+    
+    @property
+    def eta_NGS(self):
+        return float(self.efficiencies_df.loc["EFF_IN", "NGS"])
 
     @property
-    def eta_disp(self):
-        return float(self.efficiencies_df.loc["EFF_OUT", "disp"])
+    def eta_CHP(self):
+        return float(self.efficiencies_df.loc["EFF_OUT", "CHP"])
+    
+    @property
+    def eta_CHP_CCS(self):
+        return float(self.efficiencies_df.loc["EFF_CCS", "CHP"])
+    
+    @property
+    def eta_BM(self):
+        return float(self.efficiencies_df.loc["EFF_OUT", "BM"])
+    
+    @property
+    def eta_BM_CCS(self):
+        return float(self.efficiencies_df.loc["EFF_CCS", "BM"])
+    
+    @property
+    def eta_WS(self):
+        return float(self.efficiencies_df.loc["EFF_OUT", "WS"])
+    
+    @property
+    def eta_WS_CCS(self):
+        return float(self.efficiencies_df.loc["EFF_CCS", "WS"])
+    
+    @property
+    def eta_SMR(self):
+        return float(self.efficiencies_df.loc["EFF_OUT", "SMR"])
+    
+    @property
+    def eta_SMR_CCS(self):
+        return float(self.efficiencies_df.loc["EFF_CCS", "SMR"])
 
     @property
     def zeta_W_on(self):
-        if self.costs_df.loc["ANNUITY", "won"] == 1:
+        if self.costs_df.loc["ANNUITY", "WON"] == 1:
             compute_annuity = False
         else:
             compute_annuity = True
         if compute_annuity:
-            return float(capex_annuity(self.costs_df.loc["CAPEX", "won"], self.other_df.loc["lifetime", "won"], self.other_df.loc["wacc", "won"], self.n_y))
+            return float(capex_annuity(self.costs_df.loc["CAPEX", "WON"], self.other_df.loc["lifetime", "WON"], self.n_y))
         else:
-            return float(self.costs_df.loc["CAPEX", "won"])
+            return float(self.costs_df.loc["CAPEX", "WON"])
         
-    @property
-    def zeta_W_off(self):
-        if self.costs_df.loc["ANNUITY", "woff"] == 1:
-            compute_annuity = False
-        else:
-            compute_annuity = True
-        if compute_annuity:
-            return float(capex_annuity(self.costs_df.loc["CAPEX", "woff"], self.other_df.loc["lifetime", "woff"], self.other_df.loc["wacc", "woff"], self.n_y))
-        else:
-            return float(self.costs_df.loc["CAPEX", "woff"])
-
-    @property
-    def zeta_S(self):
-        if self.costs_df.loc["ANNUITY", "pv"] == 1:
-            compute_annuity = False
-        else:
-            compute_annuity = True
-        if compute_annuity:
-            return float(capex_annuity(self.costs_df.loc["CAPEX", "pv"], self.other_df.loc["lifetime", "pv"], self.other_df.loc["wacc", "pv"], self.n_y))
-        else:
-            return float(self.costs_df.loc["CAPEX", "pv"])
-
-    @property
-    def zeta_PtG(self):
-        if self.costs_df.loc["ANNUITY", "PtG"] == 1:
-            compute_annuity = False
-        else:
-            compute_annuity = True
-        if compute_annuity:
-            return float(capex_annuity(self.costs_df.loc["CAPEX", "PtG"], self.other_df.loc["lifetime", "PtG"], self.other_df.loc["wacc", "PtG"], self.n_y))
-        else:
-            return float(self.costs_df.loc["CAPEX", "PtG"])
-
-    @property
-    def zeta_H2_s(self):
-        if self.costs_df.loc["ANNUITY", "H2_s"] == 1:
-            compute_annuity = False
-        else:
-            compute_annuity = True
-        if compute_annuity:
-            return float(capex_annuity(self.costs_df.loc["CAPEX", "H2_s"], self.other_df.loc["lifetime", "H2_s"], self.other_df.loc["wacc", "H2_s"], self.n_y))
-        else:
-            return float(self.costs_df.loc["CAPEX", "H2_s"])
-        
-    @property
-    def zeta_B(self):
-        if self.costs_df.loc["ANNUITY", "batt"] == 1:
-            compute_annuity = False
-        else:
-            compute_annuity = True
-        if compute_annuity:
-            return float(capex_annuity(self.costs_df.loc["CAPEX", "batt"], self.other_df.loc["lifetime", "batt"], self.other_df.loc["wacc", "batt"], self.n_y))
-        else:
-            return float(self.costs_df.loc["CAPEX", "batt"]) 
-
-    @property
-    def zeta_H2(self):
-        if self.costs_df.loc["ANNUITY", "H2"] == 1:
-            compute_annuity = False
-        else:
-            compute_annuity = True
-        if compute_annuity:
-            return float(capex_annuity(self.costs_df.loc["CAPEX", "H2"], self.other_df.loc["lifetime", "H2"], self.other_df.loc["wacc", "H2"], self.n_y))
-        else:
-            return float(self.costs_df.loc["CAPEX", "H2"])
-
-    @property
-    def zeta_H2tCH4(self):
-        if self.costs_df.loc["ANNUITY", "H2tCH4"] == 1:
-            compute_annuity = False
-        else:
-            compute_annuity = True
-        if compute_annuity:
-            return float(capex_annuity(self.costs_df.loc["CAPEX", "H2tCH4"], self.other_df.loc["lifetime", "H2tCH4"], self.other_df.loc["wacc", "H2tCH4"], self.n_y))
-        else:
-            return float(self.costs_df.loc["CAPEX", "H2tCH4"])
-
-    @property
-    def zeta_CH4(self):
-        if self.costs_df.loc["ANNUITY", "CH4_s"] == 1:
-            compute_annuity = False
-        else:
-            compute_annuity = True
-        if compute_annuity:
-            return float(capex_annuity(self.costs_df.loc["CAPEX", "CH4_s"], self.other_df.loc["lifetime", "CH4_s"], self.other_df.loc["wacc", "CH4_s"], self.n_y))
-        else:
-            return float(self.costs_df.loc["CAPEX", "CH4_s"])
-
-    @property
-    def zeta_NG(self):
-        if self.costs_df.loc["ANNUITY", "ccgt"] == 1:
-            compute_annuity = False
-        else:
-            compute_annuity = True
-        if compute_annuity:
-            return float(capex_annuity(self.costs_df.loc["CAPEX", "ccgt"], self.other_df.loc["lifetime", "ccgt"], self.other_df.loc["wacc", "ccgt"], self.n_y))
-        else:
-            return float(self.costs_df.loc["CAPEX", "ccgt"])
-        
-    @property
-    def varsigma_ENS(self):
-        return float(self.costs_df.loc["OPEX", "ENS"])
-
-    @property
-    def varsigma_C(self):
-        return float(self.costs_df.loc['OPEX', 'C'])
-
-    @property
-    def theta_CO2(self):
-        return float(self.costs_df.loc["CO2", "ccgt"])
-
     @property
     def theta_W_on_f(self):
-        return float(self.costs_df.loc["FOM", "won"])
+        return float(self.costs_df.loc["FOM", "WON"])
 
     @property
     def theta_W_on_v(self):
-        return float(self.costs_df.loc["VOM", "won"])
-
+        return float(self.costs_df.loc["VOM", "WON"])
+        
+    @property
+    def zeta_W_off(self):
+        if self.costs_df.loc["ANNUITY", "WOFF"] == 1:
+            compute_annuity = False
+        else:
+            compute_annuity = True
+        if compute_annuity:
+            return float(capex_annuity(self.costs_df.loc["CAPEX", "WOFF"], self.other_df.loc["lifetime", "WOFF"], self.n_y))
+        else:
+            return float(self.costs_df.loc["CAPEX", "WOFF"])
+        
     @property
     def theta_W_off_f(self):
-        return float(self.costs_df.loc["FOM", "woff"])
-
+        return float(self.costs_df.loc["FOM", "WOFF"])
+    
     @property
     def theta_W_off_v(self):
-        return float(self.costs_df.loc["VOM", "woff"])
+        return float(self.costs_df.loc["VOM", "WOFF"])
 
     @property
+    def zeta_S(self):
+        if self.costs_df.loc["ANNUITY", "PV"] == 1:
+            compute_annuity = False
+        else:
+            compute_annuity = True
+        if compute_annuity:
+            return float(capex_annuity(self.costs_df.loc["CAPEX", "PV"], self.other_df.loc["lifetime", "PV"], self.n_y))
+        else:
+            return float(self.costs_df.loc["CAPEX", "PV"])
+        
+    @property
     def theta_S_f(self):
-        return float(self.costs_df.loc["FOM", "pv"])
+        return float(self.costs_df.loc["FOM", "PV"])
 
     @property
     def theta_S_v(self):
-        return float(self.costs_df.loc["VOM", "pv"])
+        return float(self.costs_df.loc["VOM", "PV"])
 
     @property
-    def theta_PtG_f(self):
-        return float(self.costs_df.loc["FOM", "PtG"])
+    def zeta_EL(self):
+        if self.costs_df.loc["ANNUITY", "EL"] == 1:
+            compute_annuity = False
+        else:
+            compute_annuity = True
+        if compute_annuity:
+            return float(capex_annuity(self.costs_df.loc["CAPEX", "EL"], self.other_df.loc["lifetime", "EL"], self.n_y))
+        else:
+            return float(self.costs_df.loc["CAPEX", "EL"])
+        
+    @property
+    def theta_EL_f(self):
+        return float(self.costs_df.loc["FOM", "EL"])
 
     @property
-    def theta_H2_s_f(self):
-        return float(self.costs_df.loc["FOM","H2_s"])
+    def zeta_H2S(self):
+        if self.costs_df.loc["ANNUITY", "H2S"] == 1:
+            compute_annuity = False
+        else:
+            compute_annuity = True
+        if compute_annuity:
+            return float(capex_annuity(self.costs_df.loc["CAPEX", "H2S"], self.other_df.loc["lifetime", "H2S"], self.n_y))
+        else:
+            return float(self.costs_df.loc["CAPEX", "H2S"])
+        
+    @property
+    def theta_H2S_f(self):
+        return float(self.costs_df.loc["FOM","H2S"])
     
     @property
-    def theta_B_f(self):
-        return float(self.costs_df.loc["FOM","batt"])
+    def zeta_CO2S(self):
+        if self.costs_df.loc["ANNUITY", "CO2S"] == 1:
+            compute_annuity = False
+        else:
+            compute_annuity = True
+        if compute_annuity:
+            return float(capex_annuity(self.costs_df.loc["CAPEX", "CO2S"], self.other_df.loc["lifetime", "CO2S"], self.n_y))
+        else:
+            return float(self.costs_df.loc["CAPEX", "CO2S"])
+        
+    @property
+    def theta_CO2S_f(self):
+        return float(self.costs_df.loc["FOM","CO2S"])
     
     @property
-    def theta_B_v(self):
-        return float(self.costs_df.loc["VOM","batt"])
+    def theta_CO2S_v(self):
+        return float(self.costs_df.loc["VOM","CO2S"])
+        
+    @property
+    def zeta_B_E(self):
+        if self.costs_df.loc["ANNUITY", "B_E"] == 1:
+            compute_annuity = False
+        else:
+            compute_annuity = True
+        if compute_annuity:
+            return float(capex_annuity(self.costs_df.loc["CAPEX", "B_E"], self.other_df.loc["lifetime", "B_E"], self.n_y))
+        else:
+            return float(self.costs_df.loc["CAPEX", "B_E"])
+        
+    @property
+    def zeta_B_P(self):
+        if self.costs_df.loc["ANNUITY", "B_P"] == 1:
+            compute_annuity = False
+        else:
+            compute_annuity = True
+        if compute_annuity:
+            return float(capex_annuity(self.costs_df.loc["CAPEX", "B_P"], self.other_df.loc["lifetime", "B_P"], self.n_y))
+        else:
+            return float(self.costs_df.loc["CAPEX", "B_P"])
+    
+    @property
+    def theta_B_E_f(self):
+        return float(self.costs_df.loc["FOM","B_E"])
+    
+    @property
+    def theta_B_P_f(self):
+        return float(self.costs_df.loc["FOM","B_P"])
 
     @property
-    def theta_H2_f(self):
-        return float(self.costs_df.loc["FOM", "H2"])
+    def zeta_FC(self):
+        if self.costs_df.loc["ANNUITY", "FC"] == 1:
+            compute_annuity = False
+        else:
+            compute_annuity = True
+        if compute_annuity:
+            return float(capex_annuity(self.costs_df.loc["CAPEX", "FC"], self.other_df.loc["lifetime", "FC"], self.n_y))
+        else:
+            return float(self.costs_df.loc["CAPEX", "FC"])
+        
+    @property
+    def theta_FC_f(self):
+        return float(self.costs_df.loc["FOM", "FC"])
 
     @property
-    def theta_H2_v(self):
-        return float(self.costs_df.loc["VOM", "H2"])
+    def theta_FC_v(self):
+        return float(self.costs_df.loc["VOM", "FC"])
 
     @property
-    def theta_H2tCH4_f(self):
-        return float(self.costs_df.loc["FOM", "H2tCH4"])
+    def zeta_MT(self):
+        if self.costs_df.loc["ANNUITY", "MT"] == 1:
+            compute_annuity = False
+        else:
+            compute_annuity = True
+        if compute_annuity:
+            return float(capex_annuity(self.costs_df.loc["CAPEX", "MT"], self.other_df.loc["lifetime", "MT"], self.n_y))
+        else:
+            return float(self.costs_df.loc["CAPEX", "MT"])
+        
+    @property
+    def theta_MT_f(self):
+        return float(self.costs_df.loc["FOM", "MT"])
 
     @property
-    def theta_CH4_f(self):
-        return float(self.costs_df.loc["FOM","CH4_s"])
+    def zeta_OCGT(self):
+        if self.costs_df.loc["ANNUITY", "OCGT"] == 1:
+            compute_annuity = False
+        else:
+            compute_annuity = True
+        if compute_annuity:
+            return float(capex_annuity(self.costs_df.loc["CAPEX", "OCGT"], self.other_df.loc["lifetime", "OCGT"], self.n_y))
+        else:
+            return float(self.costs_df.loc["CAPEX", "OCGT"])
+        
+    @property
+    def theta_OCGT_f(self):
+        return float(self.costs_df.loc["FOM", "OCGT"])
 
     @property
-    def theta_NG_f(self):
-        return float(self.costs_df.loc["FOM", "ccgt"])
+    def theta_OCGT_v(self):
+        return float(self.costs_df.loc["VOM","OCGT"])
+        
+    @property
+    def zeta_CCGT(self):
+        if self.costs_df.loc["ANNUITY", "CCGT"] == 1:
+            compute_annuity = False
+        else:
+            compute_annuity = True
+        if compute_annuity:
+            return float(capex_annuity(self.costs_df.loc["CAPEX", "CCGT"], self.other_df.loc["lifetime", "CCGT"], self.n_y))
+        else:
+            return float(self.costs_df.loc["CAPEX", "CCGT"])
+        
+    @property
+    def theta_CCGT_f(self):
+        return float(self.costs_df.loc["FOM", "CCGT"])
 
     @property
-    def theta_NG_v(self):
-        return float(self.costs_df.loc["VOM","ccgt"])
+    def theta_CCGT_v(self):
+        return float(self.costs_df.loc["VOM","CCGT"])
+        
+    @property
+    def zeta_NG_CCS(self):
+        if self.costs_df.loc["ANNUITY", "CCGT"] == 1:
+            compute_annuity = False
+        else:
+            compute_annuity = True
+        if compute_annuity:
+            return float(capex_annuity(self.costs_df.loc["CAPEX_CCS", "CCGT"], self.other_df.loc["lifetime", "CCS"], self.n_y))
+        else:
+            return float(self.costs_df.loc["CAPEX_CCS", "CCGT"])
+        
+    @property
+    def theta_NG_CCS_f(self):
+        return float(self.costs_df.loc["FOM_CCS", "CCGT"])
 
     @property
-    def theta_NG_fuel(self):
-        return float(self.costs_df.loc["FUEL", "ccgt"])
+    def theta_NG_CCS_v(self):
+        return float(self.costs_df.loc["VOM_CCS","CCGT"])
+        
+    @property
+    def zeta_CHP_CCS(self):
+        if self.costs_df.loc["ANNUITY", "CHP"] == 1:
+            compute_annuity = False
+        else:
+            compute_annuity = True
+        if compute_annuity:
+            return float(capex_annuity(self.costs_df.loc["CAPEX_CCS", "CHP"], self.other_df.loc["lifetime", "CCS"], self.n_y))
+        else:
+            return float(self.costs_df.loc["CAPEX_CCS", "CHP"])
+        
+    @property
+    def theta_CHP_CCS_f(self):
+        return float(self.costs_df.loc["FOM_CCS", "CHP"])
+    
+    @property
+    def theta_CHP_CCS_v(self):
+        return float(self.costs_df.loc["VOM_CCS", "CHP"])
+        
+    @property
+    def zeta_BM_CCS(self):
+        if self.costs_df.loc["ANNUITY", "BM"] == 1:
+            compute_annuity = False
+        else:
+            compute_annuity = True
+        if compute_annuity:
+            return float(capex_annuity(self.costs_df.loc["CAPEX_CCS", "BM"], self.other_df.loc["lifetime", "CCS"], self.n_y))
+        else:
+            return float(self.costs_df.loc["CAPEX_CCS", "BM"])
+        
+    @property
+    def theta_BM_CCS_f(self):
+        return float(self.costs_df.loc["FOM_CCS", "BM"])
+    
+    @property
+    def theta_BM_CCS_v(self):
+        return float(self.costs_df.loc["VOM_CCS", "BM"])
+        
+    @property
+    def zeta_WS_CCS(self):
+        if self.costs_df.loc["ANNUITY", "WS"] == 1:
+            compute_annuity = False
+        else:
+            compute_annuity = True
+        if compute_annuity:
+            return float(capex_annuity(self.costs_df.loc["CAPEX_CCS", "WS"], self.other_df.loc["lifetime", "CCS"], self.n_y))
+        else:
+            return float(self.costs_df.loc["CAPEX_CCS", "WS"])
+        
+    @property
+    def theta_WS_CCS_f(self):
+        return float(self.costs_df.loc["FOM_CCS", "WS"])
+    
+    @property
+    def theta_WS_CCS_v(self):
+        return float(self.costs_df.loc["VOM_CCS", "WS"])
+        
+    @property
+    def zeta_SMR(self):
+        if self.costs_df.loc["ANNUITY", "SMR"] == 1:
+            compute_annuity = False
+        else:
+            compute_annuity = True
+        if compute_annuity:
+            return float(capex_annuity(self.costs_df.loc["CAPEX", "SMR"], self.other_df.loc["lifetime", "SMR"], self.n_y))
+        else:
+            return float(self.costs_df.loc["CAPEX", "SMR"])
+        
+    @property
+    def theta_SMR_f(self):
+        return float(self.costs_df.loc["FOM", "SMR"])
 
     @property
-    def theta_NK_v(self):
-        return float(self.costs_df.loc["VOM", "NK"])
+    def theta_SMR_v(self):
+        return float(self.costs_df.loc["VOM", "SMR"])
+        
+    @property
+    def zeta_SMR_CCS(self):
+        if self.costs_df.loc["ANNUITY", "SMR"] == 1:
+            compute_annuity = False
+        else:
+            compute_annuity = True
+        if compute_annuity:
+            return float(capex_annuity(self.costs_df.loc["CAPEX_CCS", "SMR"], self.other_df.loc["lifetime", "CCS"], self.n_y))
+        else:
+            return float(self.costs_df.loc["CAPEX_CCS", "SMR"])
+        
+    @property
+    def theta_SMR_CCS_f(self):
+        return float(self.costs_df.loc["FOM_CCS", "SMR"])
+    
+    @property
+    def theta_SMR_CCS_v(self):
+        return float(self.costs_df.loc["VOM_CCS", "SMR"])
 
     @property
-    def theta_NK_fuel(self):
-        return float(self.costs_df.loc["FUEL", "NK"])
+    def zeta_ACC(self):
+        if self.costs_df.loc["ANNUITY", "ACC"] == 1:
+            compute_annuity = False
+        else:
+            compute_annuity = True
+        if compute_annuity:
+            return float(capex_annuity(self.costs_df.loc["CAPEX", "ACC"], self.other_df.loc["lifetime", "ACC_E"], self.n_y))
+        else:
+            return float(self.costs_df.loc["CAPEX", "ACC"])
+    
+    @property
+    def theta_ACC_f(self):
+        return float(self.costs_df.loc["FOM", "ACC"])
+        
+    @property
+    def varsigma_ENS_E(self):
+        return float(self.costs_df.loc["OPEX", "ENS_E"])
+    
+    @property
+    def varsigma_ENS_NG(self):
+        return float(self.costs_df.loc["OPEX", "ENS_NG"])
+    
+    @property
+    def varsigma_ENS_H2(self):
+        return float(self.costs_df.loc["OPEX", "ENS_H2"])
 
     @property
-    def theta_disp_v(self):
-        return float(self.costs_df.loc["VOM", "disp"])
-
+    def theta_H2_IE(self):
+        return dict.fromkeys(arange(0, self.t_max), self.costs_df.loc["OPEX", "H2_I"])
+    
     @property
-    def theta_disp_fuel(self):
-        return float(self.costs_df.loc["FUEL", "disp"])
-
+    def theta_PH_f(self):
+        return float(self.costs_df.loc["FOM","PH"])
+    
     @property
     def theta_PH_v(self):
         return float(self.costs_df.loc["VOM","PH"])
+    
+    @property
+    def theta_NGS_f(self):
+        return float(self.costs_df.loc["FOM", "NGS"])
+    
+    @property
+    def theta_NK_f(self):
+        return float(self.costs_df.loc["FOM", "NK"])
+    
+    @property
+    def theta_NK_v(self):
+        return float(self.costs_df.loc["VOM", "NK"])
+    
+    @property
+    def theta_CHP_f(self):
+        return float(self.costs_df.loc["FOM", "CHP"])
 
     @property
-    def theta_el(self):
-        dict_tmp = fetch_elix_index_data(self.elprice_path, data_years_input = self.n_input, 
+    def theta_CHP_v(self):
+        return float(self.costs_df.loc["VOM", "CHP"])
+    
+    @property
+    def theta_BM_f(self):
+        return float(self.costs_df.loc["FOM", "BM"])
+    
+    @property
+    def theta_BM_v(self):
+        return float(self.costs_df.loc["VOM", "BM"])
+    
+    @property
+    def theta_WS_f(self):
+        return float(self.costs_df.loc["FOM", "WS"])
+    
+    @property
+    def theta_WS_v(self):
+        return float(self.costs_df.loc["VOM", "WS"])
+    
+    @property
+    def theta_NG_I(self):
+        return fetch_gas_price_data(self.timeseries_path+"gas_price", data_years_input = 1, 
+                                    year_no = [1], data_years_output=self.n_y, units = 'MEuroGWh')
+    
+    @property
+    def theta_NK_fuel(self):
+        return float(self.costs_df.loc["FUEL", "NK"])
+    
+    @property
+    def theta_BM_fuel(self):
+        return float(self.costs_df.loc["FUEL", "BM"])
+
+    @property
+    def theta_WS_fuel(self):
+        return float(self.costs_df.loc["FUEL", "WS"])
+
+    @property
+    def theta_CO2(self):
+        return float(self.costs_df.loc["CO2", "CCGT"])
+
+    @property
+    def theta_IE(self):
+        return fetch_elix_index_data(self.elprice_path, data_years_input = self.n_input, 
                                               year_no = year_selection(self.time_path), data_years_output=self.n_y)
-        return dict(zip(self.time, _to_float(list(asarray(list(dict_tmp.values()))))))
+    @property
+    def theta_CO2_E(self):
+        return float(self.costs_df.loc["OPEX", "CO2_E"])
+    
+#    @property
+#    def varsigma_H2_TRM(self):
+#        return fetch_gas_markets_data(self.timeseries_path+"H2_transport/", data_years_input = self.n_input,
+#                                      year_no = year_selection(self.time_path), data_years_output = self.n_y, 
+#                                      vol_multiple = self.capacities_df.loc["H2transport", self.scenario], 
+#                                      price_multiple = self.other_df.loc['price', 'H2trs'])[1]
+#    
+#    @property
+#    def varsigma_H2_IDM(self):
+#        return fetch_gas_markets_data(self.timeseries_path+"H2_industry/", data_years_input = self.n_input,
+#                                      year_no = year_selection(self.time_path), data_years_output = self.n_y, 
+#                                      vol_multiple = self.capacities_df.loc["H2industry", self.scenario], 
+#                                      price_multiple = self.other_df.loc['price', 'H2ind'])[1]
+#    
+#    @property
+#    def varsigma_NG_TRM(self):
+#        return fetch_gas_markets_data(self.timeseries_path+"NG_transport/", data_years_input = self.n_input,
+#                                      year_no = year_selection(self.time_path), data_years_output = self.n_y, 
+#                                      vol_multiple = self.capacities_df.loc["NGtransport", self.scenario], 
+#                                      price_multiple = self.other_df.loc['price', 'NGtrs'])[1]
 
     @property
-    def delta_disp_inc(self):
-        return float(self.other_df.loc["delta_p","disp"])
+    def delta_CHP_inc(self):
+        return float(self.other_df.loc["delta_p","CHP"])
 
     @property
-    def delta_disp_dec(self):
-        return float(self.other_df.loc["delta_m", "disp"])
+    def delta_CHP_dec(self):
+        return float(self.other_df.loc["delta_m", "CHP"])
+    
+    @property
+    def delta_BM_inc(self):
+        return float(self.other_df.loc["delta_p","BM"])
+
+    @property
+    def delta_BM_dec(self):
+        return float(self.other_df.loc["delta_m", "BM"])
+    
+    @property
+    def delta_WS_inc(self):
+        return float(self.other_df.loc["delta_p","WS"])
+
+    @property
+    def delta_WS_dec(self):
+        return float(self.other_df.loc["delta_m", "WS"])
 
     @property
     def delta_NK_inc(self):
@@ -513,57 +946,197 @@ class Data(object):
         return float(self.other_df.loc["delta_m", "NK"])
 
     @property
-    def sigma_H2(self):
-        return float(self.other_df.loc["sigma", "H2_s"])
+    def delta_OCGT_inc(self):
+        return float(self.other_df.loc["delta_p", "OCGT"])
+
+    @property
+    def delta_OCGT_dec(self):
+        return float(self.other_df.loc["delta_m", "OCGT"])
+
+    @property
+    def delta_CCGT_inc(self):
+        return float(self.other_df.loc["delta_p", "CCGT"])
+
+    @property
+    def delta_CCGT_dec(self):
+        return float(self.other_df.loc["delta_m", "CCGT"])
+
+    @property
+    def delta_EL_inc(self):
+        return float(self.other_df.loc["delta_p", "EL"])
+
+    @property
+    def delta_EL_dec(self):
+        return float(self.other_df.loc["delta_m", "EL"])
+
+    @property
+    def delta_MT_inc(self):
+        return float(self.other_df.loc["delta_p", "MT"])
+
+    @property
+    def delta_MT_dec(self):
+        return float(self.other_df.loc["delta_m", "MT"])
+
+    @property
+    def delta_FC_inc(self):
+        return float(self.other_df.loc["delta_p", "FC"])
+
+    @property
+    def delta_FC_dec(self):
+        return float(self.other_df.loc["delta_m", "FC"])
+
+    @property
+    def sigma_H2S(self):
+        return float(self.other_df.loc["sigma", "H2S"])
 
     @property
     def sigma_PH(self):
         return float(self.other_df.loc["sigma", "PH"])
-
+    
     @property
-    def sigma_CH4(self):
-        return float(self.other_df.loc["sigma", "CH4_s"])
+    def sigma_NGS(self):
+        return float(self.other_df.loc["sigma", "NGS"])
     
     @property
     def sigma_B(self):
-        return float(self.other_df.loc["sigma", "batt"])
+        return float(self.other_df.loc["sigma", "B_E"])
     
     @property
-    def chi_B(self):
-        return float(self.other_df.loc["chi", "batt"])
+    def chi_H2S(self):
+       return float(self.other_df.loc["chi", "H2S"])
+    
+    @property
+    def chi_CO2S(self):
+       return float(self.other_df.loc["chi", "CO2S"])
     
     @property
     def rho_B(self):
-        return float(self.other_df.loc["rho", "batt"])
+        return float(self.other_df.loc["rho", "B_P"])
+    
+    @property
+    def rho_NGS(self):
+        return float(self.other_df.loc["rho", "NGS"])
 
     @property
-    def mu_disp(self):
-        return float(self.other_df.loc["mu", "disp"])
+    def rho_H2S(self):
+        return float(self.other_df.loc["rho", "H2S"])
+
+    @property
+    def rho_CO2S(self):
+        return float(self.other_df.loc["rho", "CO2S"])
+
+    @property
+    def mu_CHP(self):
+        return float(self.other_df.loc["mu", "CHP"])
+    
+    @property
+    def mu_BM(self):
+        return float(self.other_df.loc["mu", "BM"])
+    
+    @property
+    def mu_WS(self):
+        return float(self.other_df.loc["mu", "WS"])
 
     @property
     def mu_NK(self):
         return float(self.other_df.loc["mu", "NK"])
+    
+    @property
+    def mu_NG_I(self):
+        return float(self.other_df.loc["mu", "I_NG"])
 
     @property
-    def mu_trs(self):
-        return float(self.other_df.loc["mu","trs"])
+    def mu_E_I(self):
+        return float(self.other_df.loc["mu","I_E"])
+    
+    @property
+    def mu_H2_I(self):
+        return float(self.other_df.loc["mu","I_H2"])
+
+    @property
+    def mu_EL(self):
+        return float(self.other_df.loc["mu","EL"])
+
+    @property
+    def mu_MT(self):
+        return float(self.other_df.loc["mu","MT"])
 
     @property
     def nu_NG_CO2(self):
-        return float(self.other_df.loc["nu", "ccgt"])
-
-    @property
-    def nu_CH4_CO2(self):
-        return float(self.other_df.loc["nu", "CH4"])
-
-    @property
-    def nu_disp_CO2(self):
-        return float(self.other_df.loc["nu", "disp"])
+        return float(self.other_df.loc["nu", "CCGT"])
     
     @property
-    def nu_trs_CO2(self):
-        return float(self.other_df.loc["nu", "trs"])
+    def nu_BM_CO2(self):
+        return float(self.other_df.loc["nu", "BM"])
+    
+    @property
+    def nu_WS_CO2(self):
+        return float(self.other_df.loc["nu", "WS"])
+    
+    @property
+    def nu_E_I_CO2(self):
+        return float(self.other_df.loc["nu", "I_E"])
+    
+    @property
+    def phi_NG_CCS(self):
+        return float(self.other_df.loc["phi", "CCGT"])
+    
+    @property
+    def phi_CHP_CCS(self):
+        return float(self.other_df.loc["phi", "CHP"])
+    
+    @property
+    def phi_BM_CCS(self):
+        return float(self.other_df.loc["phi", "BM"])
+    
+    @property
+    def phi_WS_CCS(self):
+        return float(self.other_df.loc["phi", "WS"])
+    
+    @property
+    def phi_SMR_CCS(self):
+        return float(self.other_df.loc["phi", "SMR_CCS"])
+    
+    @property
+    def phi_SMR(self):
+        return float(self.other_df.loc["phi", "SMR"])
 
+    @property
+    def phi_NG_ACC(self):
+        return float(self.other_df.loc["phi", "ACC_NG"])
+
+    @property
+    def phi_E_ACC(self):
+        return float(self.other_df.loc["phi", "ACC_E"])
+    
+    @property
+    def MM_H2(self):
+        return float(self.other_df.loc["MM", "H2"])
+    
+    @property
+    def MM_H2O(self):
+        return float(self.other_df.loc["MM", "H2O"])
+    
+    @property
+    def MM_O2(self):
+        return float(self.other_df.loc["MM", "O2"])
+    
+    @property
+    def MM_CO2(self):
+        return float(self.other_df.loc["MM", "CO2"])
+    
+    @property
+    def MM_CH4(self):
+        return float(self.other_df.loc["MM", "CH4"])
+    
+    @property
+    def LHV_CH4(self):
+        return float(self.other_df.loc["LHV", "CH4"])
+    
+    @property
+    def LHV_H2(self):
+        return float(self.other_df.loc["LHV", "H2"])
+    
 def fetch_file(path_datafiles):
     dirs = os.listdir(path_datafiles)
     for dirr in dirs:
@@ -575,11 +1148,11 @@ def fetch_file(path_datafiles):
         else:
             dirs.remove(dirr)
     path_files = [path_datafiles+"/"+dirs[index] for index in range(len(dirs))]
-    df_list = [pd.read_excel(path_files[index],sheet_name=0) for index in range(len(path_files))]
+    df_list = [pd.read_excel(path_files[index],sheet_name=0, index_col=0) for index in range(len(path_files))]
     if len(df_list)==1:
         return df_list[0]
 
-def fetch_elia_load_data(path_datafiles, data_years_input, year_no, data_years_output):
+def fetch_elia_load_data(path_datafiles, data_years_input, year_no, data_years_output, n_files_yearly = 12):
     
     data_years_output = int(data_years_output)
     data_years_input = int(data_years_input)
@@ -589,7 +1162,6 @@ def fetch_elia_load_data(path_datafiles, data_years_input, year_no, data_years_o
     if len(year_no) != data_years_input:
         raise InputError('Length of input sequence should match number of input years!')
         
-    n_files_yearly = 12
     file_sequence = []
     for i in arange(0, len(year_no), 1):
         files_temp = files[(year_no[i]-1)*n_files_yearly:year_no[i]*n_files_yearly]
@@ -620,30 +1192,30 @@ def fetch_elia_load_data(path_datafiles, data_years_input, year_no, data_years_o
     x = split(df['load_n'], data_years_input, axis=0)
     x_r = shuffle_ts(x, data_years_input, data_years_output)
 
-    return x_r.to_dict()
+#    return x_r.to_dict() # needed to keep output as pandas dataframe for lambda_E property to work
+    return x_r
 
-def fetch_elia_generation_data(path_datafiles, data_years_input, year_no, data_years_output):
-    
+
+def fetch_elia_generation_data(path_datafiles, data_years_input, year_no, data_years_output, n_files_yearly=12):
     data_years_output = int(data_years_output)
     data_years_input = int(data_years_input)
 
     files = [f for f in sorted(os.listdir(path_datafiles)) if f.endswith('.xls')]
-    
+
     if len(year_no) != data_years_input:
         raise InputError('Length of input sequence should match number of input years!')
-        
-    n_files_yearly = 12
+
     file_sequence = []
     for i in arange(0, len(year_no), 1):
-        files_temp = files[(year_no[i]-1)*n_files_yearly:year_no[i]*n_files_yearly]
+        files_temp = files[(year_no[i] - 1) * n_files_yearly:year_no[i] * n_files_yearly]
         file_sequence.extend(files_temp)
-    
+
     df = pd.DataFrame()
 
     if files[0].startswith('Solar'):
 
         for f in file_sequence:
-            data = pd.read_excel(path_datafiles+str(f), index_col=0, skiprows=[0,1,2], usecols=[0, 1, 5, 6])
+            data = pd.read_excel(path_datafiles + str(f), index_col=0, skiprows=[0, 1, 2], usecols=[0, 1, 5, 6])
             data.columns = ['forecast', 'prod', 'peak']
             data['prod'].fillna(data['forecast'], inplace=True)
             data.index = pd.to_datetime(data.index, dayfirst=True)
@@ -654,7 +1226,10 @@ def fetch_elia_generation_data(path_datafiles, data_years_input, year_no, data_y
     else:
 
         for f in file_sequence:
-            data = pd.read_excel(path_datafiles+str(f), index_col=0, skiprows=[0,1,2], usecols=[0, 3, 4, 6])
+            if (('2019' in f) and ('2018' in f)) or (('2018' in f) and not ('2017' in f)):
+                data = pd.read_excel(path_datafiles + str(f), index_col=0, skiprows=[0, 1, 2], usecols=[0, 3, 4, 5])
+            else:
+                data = pd.read_excel(path_datafiles + str(f), index_col=0, skiprows=[0, 1, 2], usecols=[0, 3, 4, 6])
             data.columns = ['forecast', 'prod', 'peak']
             data['prod'].fillna(data['forecast'], inplace=True)
             data.index = pd.to_datetime(data.index, dayfirst=True)
@@ -662,13 +1237,13 @@ def fetch_elia_generation_data(path_datafiles, data_years_input, year_no, data_y
             data.fillna(method='ffill', inplace=True)
             df = pd.concat([df, data], axis=0)
 
-    df['prod_n'] = df['prod']/df['peak']
+    df['prod_n'] = df['prod'] / df['peak']
     df = df[~((df.index.month == 2) & (df.index.day == 29))]
     df.index = arange(0, df.shape[0], 1)
 
     df.drop(['prod', 'peak', 'forecast'], inplace=True, axis=1)
     df.clip(0.0, 1.0, inplace=True)
-    
+
     df[df < 0.01] = 0.0
 
     if df.isnull().values.any():
@@ -680,24 +1255,23 @@ def fetch_elia_generation_data(path_datafiles, data_years_input, year_no, data_y
     return x_r.to_dict()
 
 
-def fetch_fluxys_demand_data(path_datafiles, data_years_input, year_no, data_years_output):
-    
+def fetch_fluxys_demand_data(path_datafiles, data_years_input, year_no, data_years_output, client_type, n_files_yearly = 4):
+
     data_years_output = int(data_years_output)
     data_years_input = int(data_years_input)
 
     files = [f for f in sorted(os.listdir(path_datafiles)) if f.endswith('.csv')]
-    
+
     if len(year_no) != data_years_input:
         raise InputError('Length of input sequence should match number of input years!')
-    
-    n_files_yearly = 4
+
     file_sequence = []
     for i in arange(0, len(year_no), 1):
         files_temp = files[(year_no[i]-1)*n_files_yearly:year_no[i]*n_files_yearly]
         file_sequence.extend(files_temp)
 
     df = pd.DataFrame()
-    
+
     for f in file_sequence:
         data = pd.read_csv(path_datafiles+'/'+str(f), sep=';', usecols=['subGrid', 'gasDay', 'gasHour', 'clientType', 'physicalFlow'])
         if f == file_sequence[0]:
@@ -705,21 +1279,26 @@ def fetch_fluxys_demand_data(path_datafiles, data_years_input, year_no, data_yea
             d_start = pd.to_datetime(d_start_str, format='%d/%m/%Y %H')
         else:
             d_start = df.index[-1] + pd.Timedelta(hours=1)
-            
+
         for item in data['clientType'].unique():
             data_client = data[data['clientType'] == item]
             for net in data_client['subGrid'].unique():
                 data_network = data_client[data_client['subGrid'] == net]
                 data_network.index = pd.date_range(d_start, freq='H', periods=data_network.shape[0])
                 df = pd.concat([df, data_network], axis=0, ignore_index=False)
-    
-    df = df[~((df.index.month == 2) & (df.index.day == 29))]            
+
+    df = df[~((df.index.month == 2) & (df.index.day == 29))]
     df = df[df['clientType'] != 'End User Domestic Exit Point PP']
-    
+
+    if client_type == 'residential':
+        df = df[df['clientType'] == 'Distribution Domestic Exit Point']
+    elif client_type == 'industry':
+        df = df[df['clientType'] == 'End User Domestic Exit Point IC']
+
     df_sum = df.groupby(df.index)['physicalFlow'].sum().reset_index(drop=True)
-#    df_sum = df_sum * (-1) * 1e-3 
-    df_sum = df_sum * (-1) * 1e-6    
-    
+#    df_sum = df_sum * (-1) * 1e-3
+    df_sum = df_sum * (-1) * 1e-6
+
     # ADJUST TIME SERIES FOR THE GAS DAY THAT STARTS AT 6 AM
     data_shift = df_sum[:6]
     df_shifted = df_sum.shift(-6)
@@ -736,7 +1315,108 @@ def fetch_fluxys_demand_data(path_datafiles, data_years_input, year_no, data_yea
     return x_r.to_dict()
 
 
-def build_capacity_timeseries(y_list, p_list, data_years_output, start_year = 2019):
+
+#def fetch_fluxys_demand_data(path_datafiles, data_years_input, year_no, data_years_output, client_type, n_files_yearly = 4):
+#
+#    data_years_output = int(data_years_output)
+#    data_years_input = int(data_years_input)
+#
+#    files = [f for f in sorted(os.listdir(path_datafiles)) if f.endswith('.csv')]
+#
+#    if len(year_no) != data_years_input:
+#        raise InputError('Length of input sequence should match number of input years!')
+#
+#    file_sequence = []
+#    for i in arange(0, len(year_no), 1):
+#        files_temp = files[(year_no[i]-1)*n_files_yearly:year_no[i]*n_files_yearly]
+#        file_sequence.extend(files_temp)
+#
+#    df = pd.DataFrame()
+#
+#    for f in file_sequence:
+#        data = pd.read_csv(path_datafiles+'/'+str(f), sep=';', usecols=['subGrid', 'gasDay', 'gasHour', 'clientType', 'physicalFlow'])
+#        if f == file_sequence[0]:
+#            d_start_str = str(data['gasDay'].iloc[0])+' '+str(int(data['gasHour'].iloc[0])+5)
+#            d_start = pd.to_datetime(d_start_str, format='%d/%m/%Y %H')
+#        else:
+#            d_start = df.index[-1] + pd.Timedelta(hours=1)
+#
+#        for item in data['clientType'].unique():
+#            data_client = data[data['clientType'] == item]
+#            for net in data_client['subGrid'].unique():
+#                data_network = data_client[data_client['subGrid'] == net]
+#                data_network.index = pd.date_range(d_start, freq='H', periods=data_network.shape[0])
+#                df = pd.concat([df, data_network], axis=0, ignore_index=False)
+#
+#    df = df[~((df.index.month == 2) & (df.index.day == 29))]
+#    df = df[df['clientType'] != 'End User Domestic Exit Point PP']
+#
+#    if client_type == 'residential':
+#        df = df[df['clientType'] == 'Distribution Domestic Exit Point']
+#    elif client_type == 'industry':
+#        df = df[df['clientType'] == 'End User Domestic Exit Point IC']
+#
+#    df_sum = df.groupby(df.index)['physicalFlow'].sum().reset_index(drop=True)
+##    df_sum = df_sum * (-1) * 1e-3
+#    df_sum = df_sum * (-1) * 1e-6
+#
+#    # ADJUST TIME SERIES FOR THE GAS DAY THAT STARTS AT 6 AM
+#    data_shift = df_sum[:6]
+#    df_shifted = df_sum.shift(-6)
+#    df_shifted[-6:] = data_shift
+#
+#    df_shifted = df_shifted.astype(float)
+#
+#    if df_shifted.isnull().values.any():
+#        raise InputError('You have some NaN in your timeseries and Gurobi will complain.')
+#
+#    x = split(df_shifted, data_years_input, axis=0)
+#    x_r = shuffle_ts(x, data_years_input, data_years_output)
+#
+#    return x_r.to_dict()
+
+
+def fetch_electric_heating_data(path_datafiles, data_years_output, COP):
+
+    data_years_output = int(data_years_output)
+
+    data = pd.read_excel(path_datafiles + 'heating_profile_electric/profile.xlsx', index_col=0)
+    data_el = data['value']/COP
+    data_el = pd.concat([data_el]*data_years_output, axis=0, ignore_index=True)
+
+    return data_el.to_dict()
+
+def fetch_electric_transport_data(path_datafiles, data_years_input, year_no, data_years_output, t_max, delta, n_files_yearly = 1):
+
+    data_years_output = int(data_years_output)
+    data_years_input = int(data_years_input)
+
+    files = [f for f in sorted(os.listdir(path_datafiles)) if f.endswith('.xlsx')]
+
+    if len(year_no) != data_years_input:
+        raise InputError('Length of input sequence should match number of input years!')
+
+    file_sequence = []
+    for i in arange(0, len(year_no), 1):
+        files_temp = files[(year_no[i]-1)*n_files_yearly:year_no[i]*n_files_yearly]
+        file_sequence.extend(files_temp)
+
+    df = pd.DataFrame()
+
+    for f in file_sequence:
+        data = pd.read_excel(path_datafiles+'/'+str(f))
+        df = pd.concat([df, data], axis=0, ignore_index=True)
+
+    df = df['value']
+    idx = arange(0, t_max, delta)
+
+    x = split(df, data_years_input, axis=0)
+    x_r = shuffle_ts(x, data_years_input, data_years_output)
+
+    return dict(zip(idx, x_r))
+    
+
+def build_timeseries(y_list, p_list, data_years_output, start_year = 2019):
     
     data_years_output = int(data_years_output)
     
@@ -763,13 +1443,13 @@ def build_capacity_timeseries(y_list, p_list, data_years_output, start_year = 20
 
     return ts_cap.to_dict()
 
-def build_peakload_timeseries(data_years_output, base_peak, growth_rate):
+def build_peakload_timeseries(data_years_output, base_peak, growth_rate_E):
     
         data_years_output = int(data_years_output)
         
         x = pd.Series(index=arange(1, data_years_output+1, 1))
         for i in range(1, data_years_output+1):
-            x[i] = round(base_peak * (1+growth_rate)**i, 1)
+            x[i] = round(base_peak * (1+growth_rate_E)**i, 1)
 
         ts_cap = pd.Series()
 
@@ -780,9 +1460,10 @@ def build_peakload_timeseries(data_years_output, base_peak, growth_rate):
         if ts_cap.isnull().values.any():
             raise InputError('You have some NaN in your timeseries and Gurobi will complain.')
 
-        return ts_cap.to_dict()
+#        return ts_cap.to_dict()
+        return ts_cap
 
-def fetch_elix_index_data(path_datafiles, data_years_input, year_no, data_years_output):
+def fetch_elix_index_data(path_datafiles, data_years_input, year_no, data_years_output, units = 'MEuroGWh'):
     # DATA ACQUISITION HERE MIGHT BE AN ISSUE...
     
     data_years_output = int(data_years_output)
@@ -807,7 +1488,11 @@ def fetch_elix_index_data(path_datafiles, data_years_input, year_no, data_years_
     df = df_sequence
 
     df[df < 1.0] = 0.0
-    df = df * 1e-3
+    
+    if units == 'MEuroMWh':
+        df = df * 1e-6
+    elif units == 'MEuroGWh':
+        df = df * 1e-3
         
     if df.isnull().values.any():
         raise InputError('You have some NaN in your timeseries and Gurobi will complain.')
@@ -817,22 +1502,163 @@ def fetch_elix_index_data(path_datafiles, data_years_input, year_no, data_years_
 
     return x_r.to_dict()
 
+def fetch_gas_price_data(path_datafiles, data_years_input, year_no, data_years_output, units='MEuroGWh'):
+    # DATA ACQUISITION HERE MIGHT BE AN ISSUE...
 
-def capex_annuity(capex, lifetime, wacc, n_y):
+    data_years_output = int(data_years_output)
+    data_years_input = int(data_years_input)
+
+    files = [f for f in sorted(os.listdir(path_datafiles)) if f.endswith('.xlsx')]
+
+    df = pd.DataFrame()
+    df_sequence = pd.DataFrame()
+
+    for f in files:
+        ts = pd.read_excel(path_datafiles + '/' + str(f), index_col=0)
+        df = pd.concat([df, ts], axis=0, ignore_index=True)
+
+    # orders data as specified by order of years in year_no list?
+    for i in arange(0, len(year_no), 1):
+        df_temp = df.loc[(year_no[i] - 1) * 8760:(year_no[i] * 8760 - 1)]
+        df_sequence = pd.concat([df_sequence, df_temp], axis=0, ignore_index=False)
+
+    df = df_sequence
+    df = df.append(df.tail(1))
+
+    if units == 'MEuroMWh':
+        df = df * 1e-6
+    elif units == 'MEuroGWh':
+        df = df * 1e-3
+
+    if df.isnull().values.any():
+        raise InputError('You have some NaN in your timeseries and Gurobi will complain.')
+
+    start_date = datetime(2017, 10, 1)
+    end_date = datetime(2018, 10, 1)
+    date_index = pd.date_range(start_date, end_date, freq='D')
+
+    df.index = date_index
+    df = df.resample('H').pad()
+    df = df[:-1]
+
+    df['day'] = df.index.day
+    df['month'] = df.index.month
+    df = df.sort_values(['month', 'day'], ascending=[True, True])
+
+    # shuffles randomly?
+    x = split(df['price'], data_years_input, axis=0)
+    x_r = shuffle_ts(x, data_years_input, data_years_output)
+
+    return x_r.to_dict()
+
+
+def fetch_gas_transit_data(path_datafiles, data_years_input, year_no, data_years_output):
     
-    #x = (capex/(1+wacc))*(wacc/(1-(1+wacc)**(-lifetime)))
-    x = n_y*capex/lifetime
+    data_years_output = int(data_years_output)
+    data_years_input = int(data_years_input)
+    
+    files = [f for f in sorted(os.listdir(path_datafiles)) if f.endswith('.csv')]
+
+    df = pd.DataFrame()
+    df_sequence = pd.DataFrame()
+    
+    for f in files:
+        ts = pd.read_csv(path_datafiles+'/'+str(f), sep=';', index_col=0)
+        df = pd.concat([df, ts], axis=0, ignore_index=True)
+       
+    for i in arange(0, len(year_no), 1):
+        df_temp = df.loc[(year_no[i]-1)*8760:(year_no[i]*8760-1)]
+        df_sequence = pd.concat([df_sequence, df_temp], axis=0, ignore_index=False)
+    
+    df = df_sequence
+
+    if df.isnull().values.any():
+        raise InputError('You have some NaN in your timeseries and Gurobi will complain.')
+
+    x = split(df['volume'], data_years_input, axis=0)
+    x_r = shuffle_ts(x, data_years_input, data_years_output)
+
+    return x_r.to_dict()
+
+
+
+def fetch_gas_markets_data(path_datafiles, data_years_input, year_no, data_years_output, vol_multiple, price_multiple):
+
+    data_years_output = int(data_years_output)
+    data_years_input = int(data_years_input)
+    
+    files = [f for f in sorted(os.listdir(path_datafiles)) if f.endswith('.csv')]
+
+    df = pd.DataFrame()
+    df_sequence = pd.DataFrame()
+    
+    for f in files:
+        ts = pd.read_csv(path_datafiles+'/'+str(f), sep=';', index_col=0)
+        df = pd.concat([df, ts], axis=0, ignore_index=True)
+    
+    for i in arange(0, len(year_no), 1):
+        df_temp = df.loc[(year_no[i]-1)*8760:(year_no[i]*8760-1)]
+        df_sequence = pd.concat([df_sequence, df_temp], axis=0, ignore_index=False)
+    
+    df = df_sequence
+    df['volume'] = df['volume']*vol_multiple
+    df['price'] = df['price']*price_multiple
+      
+    if df.isnull().values.any():
+        raise InputError('You have some NaN in your timeseries and Gurobi will complain.')
+
+    x_volume = split(df['volume'], data_years_input, axis=0)
+    x_r_volume = shuffle_ts(x_volume, data_years_input, data_years_output)
+    
+    x_price = split(df['price'], data_years_input, axis=0)
+    x_r_price = shuffle_ts(x_price, data_years_input, data_years_output)
+
+    return x_r_volume.to_dict(), x_r_price.to_dict()
+
+
+def build_hydrogen_supply_profile(data_years_input, data_years_output, tanker_size, tankers_per_week, hours_to_discharge, start_year):
+
+    data_years_output = int(data_years_output)
+    data_years_input = int(data_years_input)
+    date_range = pd.date_range(datetime(start_year, 1, 1, 0, 0, 0), freq='H', periods=data_years_input*8760)
+    h_output = tanker_size / hours_to_discharge
+
+    data = pd.DataFrame(index=date_range)
+
+    if tankers_per_week == 1:
+        data['value'] = where(data.index.dayofweek == 0, h_output, 0.0)
+    elif tankers_per_week == 2:
+        data['value'] = where(data.index.dayofweek == 0, h_output, where(data.index.dayofweek == 3, h_output, 0.))
+    elif tankers_per_week == 3:
+        data['value'] = where(data.index.dayofweek == 0, h_output, where(data.index.dayofweek == 3, h_output, where(data.index.dayofweek == 6, h_output, 0.)))
+    elif tankers_per_week == 4:
+        data['value'] = where(data.index.dayofweek == 0, h_output, where(data.index.dayofweek == 2, h_output, where(data.index.dayofweek == 4, h_output, where(data.index.dayofweek == 6, h_output, 0.))))
+    else:
+        raise InputError('Maximum four charges per week')
+
+    data.index = arange(data_years_input*8760)
+
+    x = split(data['value'], data_years_input, axis=0)
+    x_r = shuffle_ts(x, data_years_input, data_years_output)
+
+    return x_r.to_dict()
+
+
+
+def capex_annuity(capex, lifetime, no_years):
+    
+    x = capex*(no_years/lifetime)
     return x
 
 
-def fetch_timeseries_data(path_datafiles, output_dict=False, output_list=True):
+def fetch_timeseries_data(path_datafiles, output_dict=False):
 
     files = [f for f in os.listdir(path_datafiles) if f.endswith('.xlsx')]
     for f in files:
         df = pd.read_excel(path_datafiles+str(f))
     if output_dict:
         return dict(zip(list(df["time"]), list(df["value"])))
-    if output_list:
+    else:
         return list(df["time"]), list(df["value"])
 
 
@@ -870,7 +1696,7 @@ def shuffle_ts(data, input_years, output_years):
 
 def year_selection(path_datafiles):
     
-    data = pd.read_excel(path_datafiles + '/time.xlsx')
+    data = pd.read_excel(path_datafiles + '/time.xlsx', index_col=0)
     
     str_list = data.loc['value', 'year_no']
     if isinstance(str_list, float):
