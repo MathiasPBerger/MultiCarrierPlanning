@@ -62,7 +62,7 @@ class Print(object):
     
             if str(v) in ['K_W_on', 'K_W_off', 'K_S',
                           'K_E_EL', 'S_H2', 'K_E_FC', 'K_CH4_MT',
-                          'K_E_OCGT', 'K_E_CCGT', 'S_B', 'K_B', 'K_CO2_OCGT_CCS', 'K_CO2_CCGT_CCS', 'K_CO2_CHP_CCS'
+                          'K_E_OCGT', 'K_E_CCGT', 'S_B', 'K_B', 'K_CO2_OCGT_CCS', 'K_CO2_CCGT_CCS', 'K_CO2_CHP_CCS',
                           'K_CO2_WS_CCS', 'K_CO2_BM_CCS', 'S_CO2', 'K_H2_SMR', 'K_CO2_SMR_CCS', 'K_CO2_ACC']:
                 for index in varobject:
                     df_cap.loc[str(v), 'value'] = varobject[index].value

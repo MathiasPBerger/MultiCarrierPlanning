@@ -105,12 +105,24 @@ class Data(object):
         return float(self.capacities_df.loc["load",self.scenario])
     
     @property
+    def kappa_NG_HT(self):
+        return float(self.capacities_df.loc["K_NG_HT", self.scenario])
+    
+    @property
+    def scaling_factor_E_L(self):
+        return float(self.capacities_df.loc["scaling_E_L", self.scenario])
+    
+    @property
+    def scaling_factor_NG_HT(self):
+        return float(self.capacities_df.loc["scaling_NG_HT", self.scenario])
+    
+    @property
     def growth_rate_E(self):
         return float(self.other_df.loc['growth', 'load'])
 
     @property
     def lambda_E(self):
-        return dict(self.gamma_L.multiply(build_peakload_timeseries(self.n_y, self.kappa_L, self.growth_rate_E), axis=0))
+        return dict(self.gamma_L.multiply(self.scaling_factor_E_L*self.kappa_L, axis=0))
 
     @property
     def COP(self):
@@ -188,10 +200,13 @@ class Data(object):
         return sum(self.lambda_E.values()) + sum(self.lambda_E_TR.values()) + sum(self.lambda_E_HT.values())
 
     @property
-    def lambda_NG_HT(self):
+    def L_NG_HT(self):
         return fetch_fluxys_demand_data(self.gas_HIDM_path, data_years_input = self.n_input, 
                                               year_no = year_selection(self.time_path), data_years_output=self.n_y,
                                               client_type='residential')
+    @property
+    def lambda_NG_HT(self):
+        return dict(self.L_NG_HT.multiply(self.scaling_factor_NG_HT, axis=0))
 
     @property
     def lambda_NG_ID(self):
@@ -1311,8 +1326,10 @@ def fetch_fluxys_demand_data(path_datafiles, data_years_input, year_no, data_yea
 
     x = split(df_shifted, data_years_input, axis=0)
     x_r = shuffle_ts(x, data_years_input, data_years_output)
-
-    return x_r.to_dict()
+    if client_type == "residential":
+        return x_r
+    elif client_type == "industry":
+        return x_r.to_dict()
 
 
 

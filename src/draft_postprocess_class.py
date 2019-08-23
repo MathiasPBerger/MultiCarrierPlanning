@@ -339,6 +339,11 @@ class PostProcess(object):
     def electricity_production_FC(self):
         model, time = self.model, self.data.time
         return sum([model.P_E_FC[t].value for t in time]) * model.delta_t.value
+    
+    @property
+    def hydrogen_consumption_FC(self):
+        model, time = self.model, self.data.time
+        return sum([model.P_H2_FC[t].value for t in time]) * model.delta_t.value
 
     @property
     def net_electricity_production_BM(self):
@@ -384,6 +389,11 @@ class PostProcess(object):
     def hydrogen_production_EL(self):
         model, time = self.model, self.data.time
         return sum([model.P_H2_EL[t].value for t in time]) * model.delta_t.value
+    
+    @property
+    def hydrogen_production_SMR(self):
+        model, time = self.model, self.data.time
+        return sum([model.P_H2_SMR[t].value for t in time]) * model.delta_t.value
     
     @property
     def hydrogen_consumption_MT(self):
