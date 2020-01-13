@@ -130,11 +130,14 @@ class Data(object):
 
     @property
     def lambda_E_HT(self):
-        return fetch_electric_heating_data(self.timeseries_path, self.n_y, self.COP)
+        return fetch_electric_heating_data(self.timeseries_path, self.n_y, float(self.capacities_df.loc['peak_E_HT', self.scenario]), self.COP)
     
     @property
     def lambda_E_TR(self):
-        return fetch_electric_transport_data(self.timeseries_path+'ev_profile_electric/', self.n_input, year_selection(self.time_path), self.n_y, self.t_max, self.n_delta_t)
+        path = self.timeseries_path+'ev_profile_electric/'
+        cons_per_km = float(self.capacities_df.loc['cons_per_km', self.scenario])
+        n_vehicles = float(self.capacities_df.loc['E_transport', self.scenario])
+        return fetch_electric_transport_data(path, self.n_input, year_selection(self.time_path), self.n_y, self.t_max, self.n_delta_t, cons_per_km, n_vehicles)
 
     @property
     def kappa_W_on_0(self):
@@ -1393,17 +1396,17 @@ def fetch_fluxys_demand_data(path_datafiles, data_years_input, year_no, data_yea
 #    return x_r.to_dict()
 
 
-def fetch_electric_heating_data(path_datafiles, data_years_output, COP):
+def fetch_electric_heating_data(path_datafiles, data_years_output, peak_consumption, COP):
 
     data_years_output = int(data_years_output)
 
     data = pd.read_excel(path_datafiles + 'heating_profile_electric/profile.xlsx', index_col=0)
-    data_el = data['value']/COP
+    data_el = peak_consumption*data['normalised_profile']/COP
     data_el = pd.concat([data_el]*data_years_output, axis=0, ignore_index=True)
 
     return data_el.to_dict()
 
-def fetch_electric_transport_data(path_datafiles, data_years_input, year_no, data_years_output, t_max, delta, n_files_yearly = 1):
+def fetch_electric_transport_data(path_datafiles, data_years_input, year_no, data_years_output, t_max, delta, consumption_per_km, number_vehicles, n_files_yearly = 1):
 
     data_years_output = int(data_years_output)
     data_years_input = int(data_years_input)
@@ -1424,7 +1427,7 @@ def fetch_electric_transport_data(path_datafiles, data_years_input, year_no, dat
         data = pd.read_excel(path_datafiles+'/'+str(f))
         df = pd.concat([df, data], axis=0, ignore_index=True)
 
-    df = df['value']
+    df = consumption_per_km*number_vehicles*df['value']
     idx = arange(0, t_max, delta)
 
     x = split(df, data_years_input, axis=0)

@@ -1270,14 +1270,14 @@ def model_builder(data, folder, write_lp=False):
             model.theta_CO2_E * sum(model.Q_CO2_E[:]) * model.delta_t
 
     model.cost = Objective(rule=cost_rule, sense=minimize)
-
-    print('RES limits:', model.kappa_W_off_max.value, model.kappa_W_on_max.value, model.kappa_S_max.value)
-    print('CO2 budget:', model.psi_CO2.value)
-    print('Nuclear capacity:', model.kappa_NK.value)
     
     model.dual = Suffix(direction=Suffix.IMPORT_EXPORT)
     model.rc = Suffix(direction=Suffix.IMPORT_EXPORT)
     model.slack = Suffix(direction=Suffix.IMPORT_EXPORT)
+
+    print('RES limits:', model.kappa_W_off_max.value, model.kappa_W_on_max.value, model.kappa_S_max.value)
+    print('CO2 budget:', model.psi_CO2.value)
+    print('Nuclear capacity:', model.kappa_NK.value)
 
     dir_run	= folder
 	
