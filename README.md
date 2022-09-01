@@ -4,7 +4,7 @@ The model was originally implemented in Pyomo but has now been replaced by a GBO
 
 The repository also includes the full data required to run the GBOML model. Specifically, time series are stored in the data/ folder, while scalar parameters are directly encoded into the GBOML input file.
 
-Based on the input data provided in this repository, the different scenarios should lead to the following objectives (system cost):
+Based on the input data provided in this repository, the different scenarios should lead to the following objectives (system cost over five years):
 
 1. Scenario 1 - 3.3501e+05
 2. Scenario 2 - 2.5315e+05
