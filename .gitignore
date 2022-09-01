@@ -1,8 +1,6 @@
-data
+plots_class.py
+plots_paper.py
 *__*
 *.pyc
 *gurobi*
-src/some_plots_mathias_david_mathias.py
-output
-src/.idea*
-src/workspace.py
+results/
