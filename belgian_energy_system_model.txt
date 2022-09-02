@@ -18,39 +18,39 @@ carbon_dioxide_emissions_cost = 0.08; // MEur/kt (i.e., 80 €/ton)
 
 #NODE SOLAR_PV_PLANTS
 #PARAMETERS
-full_capex = 510.0; // MEur/GW
+full_capex = 510.0; // MEur/GW_el
 lifetime = 30.0; // yr
-annualised_capex = full_capex / lifetime; // MEur/GW-yr
-fom = 8.8; // MEur/GW-yr
+annualised_capex = full_capex / lifetime; // MEur/GW_el-yr
+fom = 8.8; // MEur/GW_el-yr
 vom = 0.0; // MEur/GWh
 capacity_factor = import "data/capacity_factor_solar_PV.csv"; // dimensionless
-pre_installed_capacity = 4.0; // GW
-max_capacity = 40.0 * global.max_RES_capacity_multiplier; // GW
+pre_installed_capacity = 4.0; // GW_el
+max_capacity = 40.0 * global.max_RES_capacity_multiplier; // GW_el
 #VARIABLES
-internal: capacity;
-external: electricity[T];
+internal: capacity; // GW_el
+external: electricity[T]; // GW_el
 #CONSTRAINTS
 capacity >= 0;
 electricity[t] >= 0;
 electricity[t] <= capacity_factor[t] * (pre_installed_capacity + capacity);
 pre_installed_capacity + capacity <= max_capacity;
 #OBJECTIVES
-min investment_cost: global.number_years_horizon * annualised_capex * capacity;
-min fom_cost: global.number_years_horizon * fom * capacity;
-min vom_cost: vom * electricity[t];
+min investment_cost: global.number_years_horizon * annualised_capex * capacity; // MEur
+min fom_cost: global.number_years_horizon * fom * capacity; // MEur
+min vom_cost: vom * electricity[t]; // MEur
 
 #NODE ONSHORE_WIND_PLANTS
 #PARAMETERS
-full_capex = 910.0; // MEur/GW
+full_capex = 910.0; // MEur/GW_el
 lifetime = 30.0; // yr
-annualised_capex = full_capex / lifetime; // MEur/GW-yr
-fom = 22.3; // MEur/GW-yr
+annualised_capex = full_capex / lifetime; // MEur/GW_el-yr
+fom = 22.3; // MEur/GW_el-yr
 vom = 0.0023; // MEur/GWh
 capacity_factor = import "data/capacity_factor_onshore_wind.csv"; // dimensionless
-pre_installed_capacity = 2.8; // GW
-max_capacity = 8.4 * global.max_RES_capacity_multiplier; // GW
+pre_installed_capacity = 2.8; // GW_el
+max_capacity = 8.4 * global.max_RES_capacity_multiplier; // GW_el
 #VARIABLES
-internal: capacity;
+internal: capacity; // GW_el
 external: electricity[T];
 #CONSTRAINTS
 capacity >= 0;
@@ -58,32 +58,32 @@ electricity[t] >= 0;
 electricity[t] <= capacity_factor[t] * (pre_installed_capacity + capacity);
 pre_installed_capacity + capacity <= max_capacity;
 #OBJECTIVES
-min investment_cost: global.number_years_horizon * annualised_capex * capacity;
-min fom_cost: global.number_years_horizon * fom * capacity;
-min vom_cost: vom * electricity[t];
+min investment_cost: global.number_years_horizon * annualised_capex * capacity; // MEur
+min fom_cost: global.number_years_horizon * fom * capacity; // MEur
+min vom_cost: vom * electricity[t]; // MEur
 
 #NODE OFFSHORE_WIND_PLANTS
 #PARAMETERS
-full_capex = 2000.0; // MEur/GW
+full_capex = 2000.0; // MEur/GW_el
 lifetime = 30.0; // yr
-annualised_capex = full_capex / lifetime; // MEur/GW-yr
-fom = 37.8; // MEur/GW-yr
+annualised_capex = full_capex / lifetime; // MEur/GW_el-yr
+fom = 37.8; // MEur/GW_el-yr
 vom = 0.0027; // MEur/GWh
 capacity_factor = import "data/capacity_factor_offshore_wind.csv"; // dimensionless
 pre_installed_capacity = 2.3; // GW
 max_capacity = 8.0 * global.max_RES_capacity_multiplier; // GW
 #VARIABLES
-internal: capacity;
-external: electricity[T];
+internal: capacity; // GW_el
+external: electricity[T]; // GW
 #CONSTRAINTS
 capacity >= 0;
 electricity[t] >= 0;
 electricity[t] <= capacity_factor[t] * (pre_installed_capacity + capacity);
 pre_installed_capacity + capacity <= max_capacity;
 #OBJECTIVES
-min investment_cost: global.number_years_horizon * annualised_capex * capacity;
-min fom_cost: global.number_years_horizon * fom * capacity;
-min vom_cost: vom * electricity[t];
+min investment_cost: global.number_years_horizon * annualised_capex * capacity; // MEur
+min fom_cost: global.number_years_horizon * fom * capacity; // MEur
+min vom_cost: vom * electricity[t]; // MEur
 
 #NODE WASTE_POWER_PLANTS_w_PCCC
   #NODE WASTE_POWER_PLANTS
@@ -115,20 +115,20 @@ min vom_cost: vom * electricity[t];
 
   #NODE PCCC // post-combustion carbon capture of waste power plants
   #PARAMETERS
-  full_capex = 2160.0; // MEur/(kt/h)
+  full_capex = 2160.0; // MEur/(kt_CO2/h)
   lifetime = 20.0; // yr
-  annualised_capex = full_capex / lifetime; // MEur/(kt/h)-yr
-  fom = 0.0; // MEur/(kt/h)-yr
-  vom = 0.0; // MEur/kt
-  electricity_cons_capture = 0.4125; // GWh/kt
-  max_capacity = global.max_capacity_PCCC; // kt/h
+  annualised_capex = full_capex / lifetime; // MEur/(kt_CO2/h)-yr
+  fom = 0.0; // MEur/(kt_CO2/h)-yr
+  vom = 0.0; // MEur/kt_CO2
+  electricity_cons_capture = 0.4125; // GWh/kt_CO2
+  max_capacity = global.max_capacity_PCCC; // kt_CO2/h
   max_capture_rate = 0.9; // dimensionless (fraction)
   #VARIABLES
-  internal: capacity;
-  internal: electricity[T];
-  external: carbon_dioxide_intake[T];
-  internal: carbon_dioxide_emitted[T];
-  internal: carbon_dioxide_captured[T];
+  internal: capacity; // kt_CO2/h
+  internal: electricity[T]; // GW
+  external: carbon_dioxide_intake[T]; // kt_CO2/h
+  internal: carbon_dioxide_emitted[T]; // kt_CO2/h
+  internal: carbon_dioxide_captured[T]; // kt_CO2/h
   #CONSTRAINTS
   capacity >= 0;
   electricity[t] >= 0;
@@ -190,16 +190,16 @@ min emissions_cost: global.carbon_dioxide_emissions_cost * carbon_dioxide_emitte
 
   #NODE PCCC // post-combustion carbon capture of biomass power plants
   #PARAMETERS
-  full_capex = 2160.0; // MEur/(kt/h)
+  full_capex = 2160.0; // MEur/(kt_CO2/h)
   lifetime = 20.0; // yr
-  annualised_capex = full_capex / lifetime; // MEur/(kt/h)-yr
-  fom = 0.0; // MEur/(kt/h)-yr
-  vom = 0.0; // MEur/kt
+  annualised_capex = full_capex / lifetime; // MEur/(kt_CO2/h)-yr
+  fom = 0.0; // MEur/(kt_CO2/h)-yr
+  vom = 0.0; // MEur/kt_CO2
   electricity_cons_capture = 0.4125; // GWh/kt
-  max_capacity = global.max_capacity_PCCC; // kt/h
+  max_capacity = global.max_capacity_PCCC; // kt_CO2/h
   max_capture_rate = 0.9; // dimensionless
   #VARIABLES
-  internal: capacity;
+  internal: capacity; // kt_CO2/h
   internal: electricity[T];
   external: carbon_dioxide_intake[T];
   internal: carbon_dioxide_emitted[T];
@@ -239,7 +239,7 @@ min emissions_cost: global.carbon_dioxide_emissions_cost * carbon_dioxide_emitte
 #PARAMETERS
 fom = 92.979; // MEur/GW_el-yr
 vom = 0.002133; // MEur/GWh_el
-fuel_cost = 0.0;  // MEur/GWh_th
+fuel_cost = 0.0; // MEur/GWh_th
 pre_installed_capacity = 3.0 * global.max_nuclear_capacity_multiplier; // GW_el
 ramp_rate_up = 0.01; // dimensionless
 ramp_rate_down = 0.01; // dimensionless
@@ -260,10 +260,10 @@ min non_fuel_vom_cost: vom * electricity[t]; // MEur
 
 #NODE NATURAL_GAS_IMPORTS
 #PARAMETERS
-capacity = 90.0;  // GWh/h - max instantaneous import capacity
+capacity = 90.0; // GWh/h - max instantaneous import capacity
 import_cost = import "data/import_costs_natural_gas.csv"; // MEur/GWh
-base_demand = 182 * 10**3;  // TWh
-max_share_base_demand = 5;  // up to 500% of base demand can be imported
+base_demand = 182 * 10**3; // TWh
+max_share_base_demand = 5; // dimensionless - up to 500% of base demand can be imported
 imports_budget = base_demand * max_share_base_demand * global.number_years_horizon; // total imports budget over time horizon
 #VARIABLES
 external: natural_gas[T]; // GWh/h
@@ -277,10 +277,10 @@ min imports_cost: import_cost[t] * natural_gas[t]; // MEur
 #NODE HYDROGEN_IMPORTS
 #PARAMETERS
 capacity = import "data/import_capacity_hydrogen.csv"; // GWh/h
-import_cost = import "data/import_costs_hydrogen.csv";  // MEur/GWh (i.e., 160 €/MWh)
-tanker_capacity = 165;  // GWh
-delivery_p_week = 3;  // number of tanker deliveries per week
-base_factor = 2.0;
+import_cost = import "data/import_costs_hydrogen.csv"; // MEur/GWh (i.e., 160 €/MWh)
+tanker_capacity = 165; // GWh
+delivery_p_week = 3; // dimensionless - number of tanker deliveries per week
+base_factor = 2.0; // dimensionless
 imports_budget = base_factor * tanker_capacity * delivery_p_week * global.number_weeks_horizon; // GWh
 #VARIABLES
 external: hydrogen[T]; // GWh/h
@@ -293,9 +293,9 @@ min imports_cost: import_cost[t] * hydrogen[t]; // MEur
 
 #NODE ELECTRICITY_INTERCONNECTION
 #PARAMETERS
-capacity = 6.5;  // GW - instantaneous import capacity
+capacity = 6.5; // GW - instantaneous import capacity
 import_cost = import "data/import_costs_electricity.csv"; // MEur/GWh
-max_import_share = 0.1;  // share of demand that can be imported (defines imports budget)
+max_import_share = 0.1; // dimensionless - share of demand that can be imported
 imports_budget = max_import_share * global.total_demand_el; // imports budget over entire time horizon
 #VARIABLES
 internal: electricity_imported[T]; // GWh/h
@@ -313,8 +313,8 @@ min imports_cost: import_cost[t] * electricity[t]; // MEur
 
 #NODE CARBON_DIOXIDE_EXPORTS
 #PARAMETERS
-export_cost = 0.002;  // MEur/kt (i.e., 2 €/ton)
-capacity = 3.5;  // kt/h
+export_cost = 0.002; // MEur/kt (i.e., 2 €/ton_CO2)
+capacity = 3.5; // kt/h - maximum instantaneous carbon dioxide export capacity
 #VARIABLES
 external: carbon_dioxide[T]; // kt/h
 #CONSTRAINTS
@@ -325,18 +325,18 @@ min exports_cost: export_cost * carbon_dioxide[t]; // MEur
 
 #NODE ELECTROLYSIS_PLANTS
 #PARAMETERS
-full_capex = 600.0;  // kEur/MW(h)
-lifetime = 15.0;
-annualised_capex = full_capex / lifetime; // MEur
-fom = 30.0;  // MEur/GW(h)
-vom = 0.0;  // €/MWh
-conversion_efficiency = 0.62;  // energy efficiency of electrolysis process
-minimum_level = 0.05;  // minimum production level (fraction of installed capacity)
-pre_installed_capacity = 0.0;  // GW(h)
-max_capacity = 13.5; // GW
+full_capex = 600.0; // MEur/GW_el
+lifetime = 15.0; // yr
+annualised_capex = full_capex / lifetime; // MEur/GW_el-yr
+fom = 30.0; // MEur/GW-yr
+vom = 0.0; // M€/GWh
+conversion_efficiency = 0.62; // dimensionless - energy efficiency of electrolysis process
+minimum_level = 0.05; // dimensionless - minimum production level (fraction of installed capacity)
+pre_installed_capacity = 0.0; // GW_el
+max_capacity = 13.5; // GW_el
 #VARIABLES
-internal: capacity; // GW(h)
-external: electricity[T]; // Gwh/h - electricity consumed by the electrolysis plants
+internal: capacity; // GW_el
+external: electricity[T]; // GWh
 external: hydrogen[T]; // GWh/h
 #CONSTRAINTS
 capacity >= 0;
@@ -347,24 +347,24 @@ minimum_level * (pre_installed_capacity + capacity) <= electricity[t];
 pre_installed_capacity + capacity <= max_capacity;
 hydrogen[t] == conversion_efficiency * electricity[t];
 #OBJECTIVES
-min investment_cost: global.number_years_horizon * annualised_capex * capacity;
-min fom_cost: global.number_years_horizon * fom * capacity;
+min investment_cost: global.number_years_horizon * annualised_capex * capacity; // MEur
+min fom_cost: global.number_years_horizon * fom * capacity; // MEur
 min vom_cost: vom * electricity[t]; // MEur
 
 #NODE HYDROGEN_FUEL_CELLS
 #PARAMETERS
-full_capex = 2000.0;  // kEur/MW(h)
-lifetime = 30.0;
-annualised_capex = full_capex / lifetime;
-fom = 100.0;  // MEur/GW(h)
-vom = 0.0;  // kEur/MWh
-conversion_efficiency = 0.5;
-minimum_level = 0.0;
-pre_installed_capacity = 0.0;  //
-max_capacity = 13.5;  // GW
+full_capex = 2000.0; // MEur/GW_el
+lifetime = 30.0; // yr
+annualised_capex = full_capex / lifetime; // MEur/GW_el-yr
+fom = 100.0; // MEur/GW_el
+vom = 0.0; // MEur/GWh
+conversion_efficiency = 0.5; // dimensionless
+minimum_level = 0.0; // dimensionless
+pre_installed_capacity = 0.0; // GW_el
+max_capacity = 13.5; // GW_el
 #VARIABLES
-internal: capacity; // GWh/h
-external: electricity[T]; // GW/h
+internal: capacity; // GW_el
+external: electricity[T]; // GW
 external: hydrogen[T]; // GWh/h
 #CONSTRAINTS
 capacity >= 0;
@@ -375,24 +375,24 @@ electricity[t] <= (pre_installed_capacity + capacity);
 minimum_level * (pre_installed_capacity + capacity) <= electricity[t];
 electricity[t] == conversion_efficiency * hydrogen[t];
 #OBJECTIVES
-min investment_cost: global.number_years_horizon * annualised_capex * capacity;
-min fom_cost: global.number_years_horizon * fom * capacity;
+min investment_cost: global.number_years_horizon * annualised_capex * capacity; // MEur
+min fom_cost: global.number_years_horizon * fom * capacity; // MEur
 min vom_cost: vom * electricity[t]; // MEur
 
 #NODE CHP_PLANTS_w_PCCC // combined heat and power plants with post-combustion carbon capture
   #NODE CHP_PLANTS // combined heat and power plants
   #PARAMETERS
-  fom = 40.0;  // MEur/GW(h)
-  vom = 0.0;  // kEur/MWh
-  pre_installed_capacity = 1.8;  // GW(h)
-  ramp_rate_up = 0.25;
-  ramp_rate_down = 0.3;
-  minimum_level = 0.2;
-  specific_emissions = 0.202;  // kt/GWh or t/MWh
-  conversion_efficiency = 0.49;
+  fom = 40.0; // MEur/GW_el-yr
+  vom = 0.0; // MEur/GWh
+  pre_installed_capacity = 1.8; // GW_el
+  ramp_rate_up = 0.25; // dimensionless
+  ramp_rate_down = 0.3; // dimensionless
+  minimum_level = 0.2; // dimensionless
+  specific_emissions = 0.202;  // kt/GWh
+  conversion_efficiency = 0.49; // dimensionless
   #VARIABLES
-  internal: electricity[T]; // GWh/h
-  internal: natural_gas[T];
+  internal: electricity[T]; // GW
+  internal: natural_gas[T]; // GWh/h
   external: carbon_dioxide[T]; // kt/h
   #CONSTRAINTS
   electricity[t] >= 0;
@@ -410,17 +410,17 @@ min vom_cost: vom * electricity[t]; // MEur
 
   #NODE PCCC // post-combustion carbon capture of CHP plants
   #PARAMETERS
-  full_capex = 3150.0;  // MEur/kt/h
-  lifetime = 20.0;
-  annualised_capex = full_capex / lifetime;
-  fom = 0.0;  // MEur/GW(h)
-  vom = 0.0;  // MEur/GWh
-  electricity_cons_capture = 0.4125;  // GWh/kt
-  max_capacity = global.max_capacity_PCCC; // kt/h
-  max_capture_rate = 0.9;
+  full_capex = 3150.0; // MEur/(kt_CO2/h)-yr
+  lifetime = 20.0; // yr
+  annualised_capex = full_capex / lifetime; // MEur/(kt_CO2/h)-yr
+  fom = 0.0; // MEur/(kt_CO2/h)-yr
+  vom = 0.0; // MEur/kt_CO2
+  electricity_cons_capture = 0.4125;  // GWh/kt_CO2
+  max_capacity = global.max_capacity_PCCC; // kt_CO2/h
+  max_capture_rate = 0.9; // dimensionless
   #VARIABLES
-  internal: capacity;
-  internal: electricity[T];
+  internal: capacity; // kt_CO2/h
+  internal: electricity[T]; // GW
   external: carbon_dioxide_intake[T];
   internal: carbon_dioxide_emitted[T];
   internal: carbon_dioxide_captured[T];
@@ -436,8 +436,8 @@ min vom_cost: vom * electricity[t]; // MEur
   carbon_dioxide_intake[t] == carbon_dioxide_captured[t] + carbon_dioxide_emitted[t];
   electricity[t] == electricity_cons_capture * carbon_dioxide_captured[t];
   #OBJECTIVES
-  min investment_cost: global.number_years_horizon * annualised_capex * capacity;
-  min fom_cost: global.number_years_horizon * fom * capacity;
+  min investment_cost: global.number_years_horizon * annualised_capex * capacity; // MEur
+  min fom_cost: global.number_years_horizon * fom * capacity; // MEur
   min vom_cost: vom * carbon_dioxide_captured[t]; // MEur
 
   #HYPEREDGE CHP_PLANTS_LINKS
@@ -454,25 +454,25 @@ external: carbon_dioxide_captured[T] <- PCCC.carbon_dioxide_captured[T];
 #CONSTRAINTS
 electricity[t] == electricity_CHP_PLANTS[t] - electricity_PCCC[t];
 #OBJECTIVES
-min emissions_cost: global.carbon_dioxide_emissions_cost * carbon_dioxide_emitted[t];
+min emissions_cost: global.carbon_dioxide_emissions_cost * carbon_dioxide_emitted[t]; // MEur
 
 #NODE OCGT_w_PCCC
   #NODE OCGT // open-cycle gas turbine
   #PARAMETERS
-  full_capex = 560.0;  // kEur/MW(h)
-  lifetime = 25.0;
-  annualised_capex = full_capex / lifetime;
-  fom = 18.6;  // MEur/GW(h)
-  vom = 0.0042;  // kEur/MWh
-  pre_installed_capacity = 0.0;  // GW(h)
-  max_capacity = 100.0;  // GW(h)
-  minimum_level = 0.0;
-  specific_emissions = 0.202; // kt/GWh
-  conversion_efficiency = 0.41;  //
+  full_capex = 560.0; // MEur/GW_el
+  lifetime = 25.0; // yr
+  annualised_capex = full_capex / lifetime; // MEur/GW_el-yr
+  fom = 18.6; // MEur/GW_el-yr
+  vom = 0.0042; // MEur/GWh
+  pre_installed_capacity = 0.0; // GW_el
+  max_capacity = 100.0; // GW_el
+  minimum_level = 0.0; // dimensionless
+  specific_emissions = 0.202; // kt/GWh_th
+  conversion_efficiency = 0.41; // dimensionless
   #VARIABLES
-  internal: capacity;
-  internal: electricity[T]; // GWh/h
-  internal: natural_gas[T];
+  internal: capacity; // GW_el
+  internal: electricity[T]; // GW
+  internal: natural_gas[T]; // GWh/h
   external: carbon_dioxide[T]; // kt/h
   #CONSTRAINTS
   capacity >= 0;
@@ -484,22 +484,22 @@ min emissions_cost: global.carbon_dioxide_emissions_cost * carbon_dioxide_emitte
   electricity[t] == conversion_efficiency * natural_gas[t];
   carbon_dioxide[t] == specific_emissions * (electricity[t] / conversion_efficiency);
   #OBJECTIVES
-  min investment_cost: global.number_years_horizon * annualised_capex * capacity;
-  min fom_cost: global.number_years_horizon * fom * capacity;
+  min investment_cost: global.number_years_horizon * annualised_capex * capacity; // MEur
+  min fom_cost: global.number_years_horizon * fom * capacity; // MEur
   min non_fuel_vom_cost: vom * electricity[t]; // MEur
 
   #NODE PCCC // post-combustion carbon capture of CHP plants
   #PARAMETERS
-  full_capex = 3150.0;  // MEur/kt/h
-  lifetime = 20.0;
-  annualised_capex = full_capex / lifetime;
-  fom = 0.0;  // MEur/GW(h)
-  vom = 0.0;  // MEur/GWh
-  electricity_cons_capture = 0.4125;  // GWh/kt
-  max_capacity = global.max_capacity_PCCC; // kt/h
-  max_capture_rate = 0.9;
+  full_capex = 3150.0; // MEur/(kt_CO2/h)
+  lifetime = 20.0; // yr
+  annualised_capex = full_capex / lifetime; // MEur/(kt_CO2/h)-yr
+  fom = 0.0; // MEur/(kt_CO2/h)-yr
+  vom = 0.0; // MEur/kt_CO2
+  electricity_cons_capture = 0.4125; // GWh/kt_CO2
+  max_capacity = global.max_capacity_PCCC; // kt_CO2/h
+  max_capture_rate = 0.9; // dimensionless
   #VARIABLES
-  internal: capacity;
+  internal: capacity; // kt_CO2/h
   internal: electricity[T];
   external: carbon_dioxide_intake[T];
   internal: carbon_dioxide_emitted[T];
@@ -516,8 +516,8 @@ min emissions_cost: global.carbon_dioxide_emissions_cost * carbon_dioxide_emitte
   carbon_dioxide_intake[t] == carbon_dioxide_captured[t] + carbon_dioxide_emitted[t];
   electricity[t] == electricity_cons_capture * carbon_dioxide_captured[t];
   #OBJECTIVES
-  min investment_cost: global.number_years_horizon * annualised_capex * capacity;
-  min fom_cost: global.number_years_horizon * fom * capacity;
+  min investment_cost: global.number_years_horizon * annualised_capex * capacity; // MEur
+  min fom_cost: global.number_years_horizon * fom * capacity; // MEur
   min vom_cost: vom * carbon_dioxide_captured[t]; // MEur
 
   #HYPEREDGE OCGT_LINKS
@@ -534,24 +534,24 @@ external: carbon_dioxide_captured[T] <- PCCC.carbon_dioxide_captured[T];
 #CONSTRAINTS
 electricity[t] == electricity_OCGT[t] - electricity_PCCC[t];
 #OBJECTIVES
-min emissions_cost: global.carbon_dioxide_emissions_cost * carbon_dioxide_emitted[t];
+min emissions_cost: global.carbon_dioxide_emissions_cost * carbon_dioxide_emitted[t]; // MEur
 
 #NODE CCGT_w_PCCC // combined-cycle gas turbine
   #NODE CCGT
   #PARAMETERS
-  full_capex = 830.0; // MEur/GWh_el
-  lifetime = 25.0;  // yr
-  annualised_capex = full_capex / lifetime;
-  fom = 27.8;  // MEur/GWh_el-yr
-  vom = 0.0042;  // MEur/GWh
-  pre_installed_capacity = 0.0;  // GW(h)
-  max_capacity = 100.0;  // GW(h)
-  minimum_level = 0.0;
-  specific_emissions = 0.202;  // kt/GWh
-  conversion_efficiency = 0.58;  //
+  full_capex = 830.0; // MEur/GW_el
+  lifetime = 25.0; // yr
+  annualised_capex = full_capex / lifetime; // MEur/GW_el-yr
+  fom = 27.8; // MEur/GW_el-yr
+  vom = 0.0042; // MEur/GWh
+  pre_installed_capacity = 0.0; // GW_el
+  max_capacity = 100.0; // GW_el
+  minimum_level = 0.0; // dimensionless
+  specific_emissions = 0.202; // kt/GWh_th
+  conversion_efficiency = 0.58; // dimensionless
   #VARIABLES
-  internal: capacity;
-  internal: electricity[T]; // GWh/h
+  internal: capacity; // GW_el
+  internal: electricity[T]; // GW
   external: natural_gas[T]; // GWh/h
   external: carbon_dioxide[T]; // kt/h
   #CONSTRAINTS
@@ -564,20 +564,20 @@ min emissions_cost: global.carbon_dioxide_emissions_cost * carbon_dioxide_emitte
   electricity[t] == conversion_efficiency * natural_gas[t];
   carbon_dioxide[t] == specific_emissions * (electricity[t] / conversion_efficiency);
   #OBJECTIVES
-  min investment_cost: global.number_years_horizon * annualised_capex * capacity;
-  min fom_cost: global.number_years_horizon * fom * capacity;
+  min investment_cost: global.number_years_horizon * annualised_capex * capacity; // MEur
+  min fom_cost: global.number_years_horizon * fom * capacity; // MEur
   min non_fuel_vom_cost: vom * electricity[t]; // MEur
 
   #NODE PCCC // post-combustion carbon capture of CCGT plants
   #PARAMETERS
-  full_capex = 3150.0;  // MEur/kt/h
-  lifetime = 20.0;
-  annualised_capex = full_capex / lifetime;
-  fom = 0.0;  // MEur/GW(h)
-  vom = 0.0;  // MEur/GWh
-  electricity_cons_capture = 0.4125;  // GWh/kt
-  max_capacity = global.max_capacity_PCCC; // kt/h
-  max_capture_rate = 0.9;
+  full_capex = 3150.0; // MEur/(kt_CO2/h)
+  lifetime = 20.0; // yr
+  annualised_capex = full_capex / lifetime; // MEur/(kt_CO2/h)-yr
+  fom = 0.0; // MEur/(kt_CO2/h)-yr
+  vom = 0.0; // MEur/kt_CO2
+  electricity_cons_capture = 0.4125; // GWh/kt_CO2
+  max_capacity = global.max_capacity_PCCC; // kt_CO2/h
+  max_capture_rate = 0.9; // dimensionless
   #VARIABLES
   internal: capacity;
   internal: electricity[T];
@@ -596,8 +596,8 @@ min emissions_cost: global.carbon_dioxide_emissions_cost * carbon_dioxide_emitte
   carbon_dioxide_intake[t] == carbon_dioxide_captured[t] + carbon_dioxide_emitted[t];
   electricity[t] == electricity_cons_capture * carbon_dioxide_captured[t];
   #OBJECTIVES
-  min investment_cost: global.number_years_horizon * annualised_capex * capacity;
-  min fom_cost: global.number_years_horizon * fom * capacity;
+  min investment_cost: global.number_years_horizon * annualised_capex * capacity; // MEur
+  min fom_cost: global.number_years_horizon * fom * capacity; // MEur
   min vom_cost: vom * carbon_dioxide_captured[t]; // MEur
 
   #HYPEREDGE CCGT_LINKS
@@ -614,26 +614,26 @@ external: carbon_dioxide_captured[T] <- PCCC.carbon_dioxide_captured[T];
 #CONSTRAINTS
 electricity[t] == electricity_CCGT[t] - electricity_PCCC[t];
 #OBJECTIVES
-min emissions_cost: global.carbon_dioxide_emissions_cost * carbon_dioxide_emitted[t];
+min emissions_cost: global.carbon_dioxide_emissions_cost * carbon_dioxide_emitted[t]; // MEur
 
 #NODE METHANATION_PLANTS
 #PARAMETERS
-full_capex = 400.0;  // MEur/(GWh/h)
-lifetime = 20.0;
-annualised_capex = full_capex / lifetime;
-fom = 20.0;  // MEur/GW(h)
-vom = 0.0;  // kEur/MWh
-pre_installed_capacity = 0.0;
-max_capacity = 13.5;  // GW(h)
-minimum_level = 0.0;
-conversion_efficiency = 0.78;
-stoichiometric_coeff_CO2_CH4 = 1.0;
-molar_mass_CH4 = 16.0;  // g/mol
-molar_mass_CO2 = 44.0;  // g/mol
-HHV_CH4 = 15.4;  // GWh/kt
-conversion_CH4_CO2 = stoichiometric_coeff_CO2_CH4 * molar_mass_CO2 / (molar_mass_CH4 * HHV_CH4);
+full_capex = 400.0; // MEur/(GWh_CH4/h)
+lifetime = 20.0; // yr
+annualised_capex = full_capex / lifetime; // MEur/(GWh_CH4/h)-yr
+fom = 20.0; // MEur/(GWh_CH4/h)-yr
+vom = 0.0; // MEur/GWh_CH4
+pre_installed_capacity = 0.0; // GWh_CH4/h
+max_capacity = 13.5; // GWh/h
+minimum_level = 0.0; // dimensionless
+conversion_efficiency = 0.78; // dimensionless
+stoichiometric_coeff_CO2_CH4 = 1.0; // dimensionless
+molar_mass_CH4 = 16.0; // g/mol
+molar_mass_CO2 = 44.0; // g/mol
+HHV_CH4 = 15.4; // GWh/kt
+conversion_CH4_CO2 = stoichiometric_coeff_CO2_CH4 * molar_mass_CO2 / (molar_mass_CH4 * HHV_CH4); // dimensionless
 #VARIABLES
-internal: capacity; // GWh/h of CH4
+internal: capacity; // GWh_CH4/h
 external: methane[T]; // GWh/h
 external: hydrogen[T]; // GWh/h
 external: carbon_dioxide[T]; // kt/h
@@ -648,29 +648,29 @@ methane[t] <= pre_installed_capacity + capacity;
 methane[t] == conversion_efficiency * hydrogen[t];
 carbon_dioxide[t] == conversion_CH4_CO2 * methane[t];
 #OBJECTIVES
-min investment_cost: global.number_years_horizon * annualised_capex * capacity;
-min fom_cost: global.number_years_horizon * fom * capacity;
+min investment_cost: global.number_years_horizon * annualised_capex * capacity; // MEur
+min fom_cost: global.number_years_horizon * fom * capacity; // MEur
 min vom_cost: vom * methane[t]; // MEur
 
 #NODE SMR_w_PCCC // steam methane reformers with post-combustion carbon capture
   #NODE SMR
   #PARAMETERS
-  full_capex = 400.0;  // kEur/MW(h)
-  lifetime = 20.0;
-  annualised_capex = full_capex / lifetime;
-  fom = 20.0;  // MEur/GW(h)
-  vom = 0.0;  // kEur/MWh
-  pre_installed_capacity = 0.0;
-  max_capacity = 13.5;  // GW(h)
-  minimum_level = 0.0;
-  conversion_efficiency = 0.8;  // %
-  electricity_consumption = 0.023;  // [-]
-  specific_emissions = 0.202; // kt/GWh or t/MWh
+  full_capex = 400.0; // MEur/(GWh_H2/h)
+  lifetime = 20.0; // yr
+  annualised_capex = full_capex / lifetime; // MEur/(GWh_H2/h)
+  fom = 20.0; // MEur/(GWh_H2/h)-yr
+  vom = 0.0; // MEur/GWh
+  pre_installed_capacity = 0.0; // GWh/h
+  max_capacity = 13.5; // GWh/h
+  minimum_level = 0.0; // dimensionless
+  conversion_efficiency = 0.8; // dimensionless
+  electricity_consumption = 0.023; // dimensionless (GWh_el/GWh_H2)
+  specific_emissions = 0.202; // kt/GWh
   #VARIABLES
-  internal: capacity; // GWh/h of H2
+  internal: capacity; // GWh_H2/h
   external: natural_gas[T]; // GWh/h
   external: hydrogen[T]; // GWh/h
-  external: electricity[T]; // GWh/h
+  external: electricity[T]; // GW
   external: carbon_dioxide[T]; // kt/h
   #CONSTRAINTS
   capacity >= 0;
@@ -684,20 +684,20 @@ min vom_cost: vom * methane[t]; // MEur
   electricity[t] == electricity_consumption * hydrogen[t];
   carbon_dioxide[t] == specific_emissions * (hydrogen[t] / conversion_efficiency);
   #OBJECTIVES
-  min investment_cost: global.number_years_horizon * annualised_capex * capacity;
-  min fom_cost: global.number_years_horizon * fom * capacity;
+  min investment_cost: global.number_years_horizon * annualised_capex * capacity; // MEur
+  min fom_cost: global.number_years_horizon * fom * capacity; // MEur
   min vom_cost: vom * hydrogen[t]; // MEur
 
   #NODE PCCC // post-combustion carbon capture of CHP plants
   #PARAMETERS
-  full_capex = 3150.0;  // MEur/kt/h
-  lifetime = 20.0;
-  annualised_capex = full_capex / lifetime;
-  fom = 0.0;  // MEur/GW(h)
-  vom = 0.0;  // MEur/GWh
-  electricity_cons_capture = 0.4125;  // GWh/kt
+  full_capex = 3150.0; // MEur/(kt/h)
+  lifetime = 20.0; // yr
+  annualised_capex = full_capex / lifetime; // MEur/(kt/h)-yr
+  fom = 0.0; // MEur/(kt/h)-yr
+  vom = 0.0; // MEur/kt
+  electricity_cons_capture = 0.4125; // GWh_el/kt
   max_capacity = global.max_capacity_PCCC; // kt/h
-  max_capture_rate = 0.9;
+  max_capture_rate = 0.9; // dimensionless
   #VARIABLES
   internal: capacity;
   external: electricity[T];
@@ -716,8 +716,8 @@ min vom_cost: vom * methane[t]; // MEur
   carbon_dioxide_intake[t] == carbon_dioxide_captured[t] + carbon_dioxide_emitted[t];
   electricity[t] == electricity_cons_capture * carbon_dioxide_captured[t];
   #OBJECTIVES
-  min investment_cost: global.number_years_horizon * annualised_capex * capacity;
-  min fom_cost: global.number_years_horizon * fom * capacity;
+  min investment_cost: global.number_years_horizon * annualised_capex * capacity; // MEur
+  min fom_cost: global.number_years_horizon * fom * capacity; // MEur
   min vom_cost: vom * carbon_dioxide_captured[t]; // MEur
 
   #HYPEREDGE SMR_LINKS
@@ -735,26 +735,26 @@ external: carbon_dioxide_captured[T] <- PCCC.carbon_dioxide_captured[T];
 #CONSTRAINTS
 electricity[t] == electricity_SMR[t] + electricity_PCCC[t];
 #OBJECTIVES
-min emissions_cost: global.carbon_dioxide_emissions_cost * carbon_dioxide_emitted[t];
+min emissions_cost: global.carbon_dioxide_emissions_cost * carbon_dioxide_emitted[t]; // MEur
 
 #NODE DIRECT_AIR_CAPTURE_PLANTS // Direct air capture plants
 #PARAMETERS
-full_capex = 7500.0;  // MEur/kt/h
-lifetime = 30.0;
-annualised_capex = full_capex / lifetime;
-fom = 25.0;  //  MEur/kt/h
-vom = 0.0;  // €/kt
-pre_installed_capacity = 0.0;  // kt/h
-max_capacity = global.max_capacity_DAC; // kt/h
-electricity_cons = 0.366;  // MWh/t or GWh/kt
-natural_gas_cons = 1.47;  // MWh/t or GWh/kt
-specific_emissions = 0.202;  // kt/GWh or t/MWh
+full_capex = 7500.0; // MEur/(kt_CO2/h)
+lifetime = 30.0; // yr
+annualised_capex = full_capex / lifetime; // MEur/(kt_CO2/h)-yr
+fom = 25.0; //  MEur/(kt_CO2/h)-yr
+vom = 0.0; // MEur/kt_CO2
+pre_installed_capacity = 0.0; // kt_CO2/h
+max_capacity = global.max_capacity_DAC; // kt_CO2/h
+electricity_cons = 0.366; // GWh/kt_CO2
+natural_gas_cons = 1.47; // GWh/kt_CO2
+specific_emissions = 0.202; // kt_CO2/GWh_th
 #VARIABLES
-internal: capacity; // kt/h - carbon dioxide is the reference flow for sizing
-external: electricity[T]; // GWh
-external: natural_gas[T]; // GWh
-external: carbon_dioxide_captured[T]; // kt/h
-external: carbon_dioxide_output[T]; // kt/h
+internal: capacity; // kt_CO2/h
+external: electricity[T]; // GW
+external: natural_gas[T]; // GWh/h
+external: carbon_dioxide_captured[T]; // ktkt_CO2/h
+external: carbon_dioxide_output[T]; // ktkt_CO2/h
 #CONSTRAINTS
 capacity >= 0;
 electricity[t] >= 0;
@@ -767,38 +767,38 @@ electricity[t] == electricity_cons * carbon_dioxide_captured[t];
 natural_gas[t] == natural_gas_cons * carbon_dioxide_captured[t];
 carbon_dioxide_output[t] == carbon_dioxide_captured[t] + specific_emissions * natural_gas[t];
 #OBJECTIVES
-min investment_cost: global.number_years_horizon * annualised_capex * capacity;
-min fom_cost: global.number_years_horizon * fom * capacity;
+min investment_cost: global.number_years_horizon * annualised_capex * capacity; // MEur
+min fom_cost: global.number_years_horizon * fom * capacity; // MEur
 min vom_cost: vom * carbon_dioxide_captured[t]; // MEur
 
 #NODE BATTERY_STORAGE
 #PARAMETERS
-full_capex_flow = 108.0;  // kEur/MW(h)
-full_capex_stock = 326.25;  // kEur/MW(h)
-lifetime_flow = 20.0;
-lifetime_stock = 10.0;
-annualised_capex_flow = full_capex_flow / lifetime_flow;
-annualised_capex_stock = full_capex_stock / lifetime_stock;
-fom_flow = 5.4;  // MEur/GW(h)
-fom_stock = 16.3125;  // MEur/GW(h)
-vom_flow = 0.0;
-vom_stock = 0.0;
-pre_installed_capacity_flow = 0.0;
-pre_installed_capacity_stock = 0.0;
+full_capex_flow = 108.0; // MEur/GW
+full_capex_stock = 326.25; // MEur/GWh
+lifetime_flow = 20.0; // yr
+lifetime_stock = 10.0; // yr
+annualised_capex_flow = full_capex_flow / lifetime_flow; // MEur/GW-yr
+annualised_capex_stock = full_capex_stock / lifetime_stock; // MEur/GWh-yr
+fom_flow = 5.4; // MEur/GW-yr
+fom_stock = 16.3125; // MEur/GWh-yr
+vom_flow = 0.0; // MEur/GWh
+vom_stock = 0.0; // MEur/GWh
+pre_installed_capacity_flow = 0.0; // GW
+pre_installed_capacity_stock = 0.0; // GWh
 max_capacity_flow = 2500; // GW
 max_capacity_stock = 5000; // GWh
-charge_efficiency = 0.92;
-discharge_efficiency = 0.92;
-minimum_storage_level = 0.0;
-self_discharge = 0.999;
-charge_discharge_ratio = 0.5; // fraction of the power capacity that limit the amount of electricity that can be charged in 1 hour
+charge_efficiency = 0.92; // dimensionless
+discharge_efficiency = 0.92; // dimensionless
+minimum_storage_level = 0.0; // dimensionless
+self_discharge = 0.999; // dimensionless
+charge_discharge_ratio = 0.5; // dimensionless - fraction of the power capacity limiting the amount of electricity that can be charged in 1 hour
 #VARIABLES
-external: electricity[T]; // GWh/h
-internal: electricity_charged[T]; // GWh/h - electricity charged
-internal: electricity_discharged[T]; // GWh/h - electricity discharged
-internal: capacity_stock; // GWh/h
-internal: capacity_flow; // GWh/h
-internal: electricity_stored[T]; // GWh/h
+external: electricity[T]; // GW
+internal: electricity_charged[T]; // GW
+internal: electricity_discharged[T]; // GW
+internal: capacity_stock; // GWh
+internal: capacity_flow; // GW
+internal: electricity_stored[T]; // GWh
 #CONSTRAINTS
 electricity_charged[t] >= 0;
 electricity_discharged[t] >= 0;
@@ -821,19 +821,19 @@ min vom_cost: vom_stock * electricity_stored[t] + vom_flow * electricity_charged
 
 #NODE PUMPED_HYDRO_STORAGE
 #PARAMETERS
-fom = 45.0;  // MEur/GW(h)
-vom = 0.008;  // €/MWh
-pre_installed_capacity_flow = 1.3;  // GW
-pre_installed_capacity_stock = 5.3;  // GWh
-charge_efficiency = 0.9;
-discharge_efficiency = 0.9;
-minimum_storage_level = 0.0;
-self_discharge = 1.0;
+fom = 45.0; // MEur/GWh
+vom = 0.008; // M€/GW
+pre_installed_capacity_flow = 1.3; // GW
+pre_installed_capacity_stock = 5.3; // GWh
+charge_efficiency = 0.9; // dimensionless
+discharge_efficiency = 0.9; // dimensionless
+minimum_storage_level = 0.0; // dimensionless
+self_discharge = 1.0; // dimensionless
 #VARIABLES
-external: electricity[T]; // GWh/h
-internal: electricity_charged[T]; // GWh/h
-internal: electricity_discharged[T]; // GWh/h
-internal: electricity_stored[T]; // GWh/h
+external: electricity[T]; // GW
+internal: electricity_charged[T]; // GW
+internal: electricity_discharged[T]; // GW
+internal: electricity_stored[T]; // GWh
 #CONSTRAINTS
 electricity_charged[t] >= 0;
 electricity_discharged[t] >= 0;
@@ -851,15 +851,15 @@ min vom_cost: vom * electricity_charged[t]; // MEur
 
 #NODE NATURAL_GAS_STORAGE
 #PARAMETERS
-fom = 0.0025;  // MEur/GW(h)
-vom = 0.0;  // €/MWh
-pre_installed_capacity_stock = 8000.0;  // GWh
+fom = 0.0025; // MEur/GWh
+vom = 0.0; // M€/(GWh_NG/h)
+pre_installed_capacity_stock = 8000.0; // GWh
 pre_installed_capacity_flow = 7.0;  // GWh/h
-charge_efficiency = 0.987;  // some gas is burnt to power compressors
-discharge_efficiency = 1.0;  // some energy is expensed to retrieve gas
-minimum_storage_level = 0.0;
-self_discharge = 1.0;
-charge_discharge_ratio = 0.5;
+charge_efficiency = 0.987; // dimensionless - some gas is burnt to power compressors
+discharge_efficiency = 1.0; // dimensionless - no energy is required to release gas
+minimum_storage_level = 0.0; // dimensionless
+self_discharge = 1.0; // dimensionless
+charge_discharge_ratio = 0.5; // dimensionless
 #VARIABLES
 external: natural_gas[T]; // GWh/h
 internal: natural_gas_out[T]; // GWh/h
@@ -882,24 +882,24 @@ min vom_cost: vom * natural_gas_in[t];
 
 #NODE HYDROGEN_STORAGE
 #PARAMETERS
-full_capex = 11.0;  // MEur/GWh
-lifetime = 30.0;
-annualised_capex = full_capex / lifetime;
-fom = 0.55;  // MEur/GW(h)
-vom = 0.0;  // €/MWh
-duration_ratio = 0.1;
-pre_installed_capacity_stock = 0.0;  // GW(h)
-pre_installed_capacity_flow = duration_ratio * pre_installed_capacity_stock;
-max_capacity_stock = 10000;  // GW(h)
-charge_efficiency = 1.0;
-discharge_efficiency = 1.0;
-minimum_storage_level = 0.0; // %
-self_discharge = 1.0;
-charge_discharge_ratio = 1.0;
+full_capex = 11.0; // MEur/GWh_H2
+lifetime = 30.0; // yr
+annualised_capex = full_capex / lifetime; // MEur/GWh_H2-yr
+fom = 0.55; // MEur/GWh_H2-yr
+vom = 0.0; // M€/(GWh/h)
+duration_ratio = 0.1; // dimensionless
+pre_installed_capacity_stock = 0.0; // GWh_H2
+pre_installed_capacity_flow = duration_ratio * pre_installed_capacity_stock; // GWh/h
+max_capacity_stock = 1000; // GWh
+charge_efficiency = 1.0; // dimensionless
+discharge_efficiency = 1.0; // dimensionless
+minimum_storage_level = 0.0; // dimensionless
+self_discharge = 1.0; // dimensionless
+charge_discharge_ratio = 1.0; // dimensionless
 #VARIABLES
-internal: capacity_stock; // GWh/h
-internal: capacity_flow; // GWh/h
-internal: hydrogen_stored[T]; // GWh/h
+internal: capacity_stock; // GWh_H2
+internal: capacity_flow; // GWh_H2/h
+internal: hydrogen_stored[T]; // GWh
 internal: hydrogen_out[T]; // GWh/h
 internal: hydrogen_in[T]; // GWh/h
 external: hydrogen[T]; // GWh/h
@@ -925,18 +925,18 @@ min vom_cost: vom * hydrogen_in[t]; // MEur
 
 #NODE CARBON_DIOXIDE_STORAGE
 #PARAMETERS
-full_capex = 0.1;  // MEur/kt
-lifetime = 20.0;
-annualised_capex = full_capex / lifetime;
-fom = 0.0;
-vom = 0.0;
-pre_installed_capacity = 0.0;
-max_capacity_stock = 100.0 * global.max_carbon_dioxide_storage_capacity_multiplier;  // kt
-duration_ratio = 0.2;
-charge_discharge_ratio = 1.0;
-charge_efficiency = 1.0;
-discharge_efficiency = 1.0;
-self_discharge = 1.0;
+full_capex = 0.1; // MEur/kt
+lifetime = 20.0; // yr
+annualised_capex = full_capex / lifetime; // MEur/kt-yr
+fom = 0.0; // MEur/kt-yr
+vom = 0.0; // MEur/kt
+pre_installed_capacity = 0.0; // kt
+max_capacity_stock = 100.0 * global.max_carbon_dioxide_storage_capacity_multiplier; // kt
+duration_ratio = 0.2; // dimensionless
+charge_discharge_ratio = 1.0; // dimensionless
+charge_efficiency = 1.0; // dimensionless
+discharge_efficiency = 1.0; // dimensionless
+self_discharge = 1.0; // dimensionless
 #VARIABLES
 internal: capacity_stock; // kt/h
 internal: capacity_flow; // kt
@@ -961,16 +961,16 @@ carbon_dioxide[t] == -carbon_dioxide_in[t] + carbon_dioxide_out[t];
 #OBJECTIVES
 min investment_cost: global.number_years_horizon * annualised_capex * capacity_stock; // MEur
 min fom_cost: global.number_years_horizon * fom * capacity_stock; // MEur
-min vom_cost: vom * carbon_dioxide_in[t];
+min vom_cost: vom * carbon_dioxide_in[t]; // MEur
 
 #NODE ELECTRICAL_DEMAND_RESPONSE
 #PARAMETERS
 value_of_lost_load = 3.0; // MEur/GWh
-max_demand_shed = 1000000.0; // GWh - parameter used to limit instantaneous load shedding
+max_demand_shed = 1000.0; // GWh - parameter used to limit instantaneous load shedding
 //electricity_demand_ev[global.number_days_horizon] = global.demand_el_ev; // GWh - daily electricity demand for EV charging
 #VARIABLES
 external: load_shedding[T]; // GWh/h - energy not served
-external: ev_charge[T]; // GWh/h external
+external: ev_charge[T]; // GW
 #CONSTRAINTS
 load_shedding[t] >= 0;
 ev_charge[t] >= 0;
@@ -982,7 +982,7 @@ min load_shedding_cost: value_of_lost_load * load_shedding[t]; // MEur
 #NODE NATURAL_GAS_DEMAND_RESPONSE
 #PARAMETERS
 value_of_lost_load = 0.5; // MEur/GWh
-max_demand_shed = 1000000.0; // GW - parameter used to limit instantaneous load shedding
+max_demand_shed = 1000.0; // GWh - parameter used to limit instantaneous load shedding
 #VARIABLES
 external: load_shedding[T]; // GWh/h - energy not served
 #CONSTRAINTS
@@ -994,7 +994,7 @@ min load_shedding_cost: value_of_lost_load * load_shedding[t]; // MEur
 #NODE HYDROGEN_DEMAND_RESPONSE
 #PARAMETERS
 value_of_lost_load = 0.5; // MEur/GWh
-max_demand_shed = 1000000.0; // GW - parameter used to limit instantaneous load shedding
+max_demand_shed = 1000.0; // GWh - parameter used to limit instantaneous load shedding
 #VARIABLES
 external: load_shedding[T]; // GWh/h - energy not served
 #CONSTRAINTS
@@ -1005,7 +1005,7 @@ min load_shedding_cost: value_of_lost_load * load_shedding[t]; // MEur
 
 #HYPEREDGE links
 #PARAMETERS
-specific_emissions_natural_gas = 0.202;
+specific_emissions_natural_gas = 0.202; // kt_CO2/GWh_NG
 carbon_dioxide_emissions_quota = 15520 * global.number_years_horizon; // kt
 heat_demand_natural_gas = import "data/heat_demand_natural_gas.csv"; // GWh/h
 industry_demand_natural_gas = import "data/industry_demand_natural_gas.csv"; // GWh/h
