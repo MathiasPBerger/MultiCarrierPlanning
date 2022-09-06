@@ -298,8 +298,8 @@ import_cost = import "data/import_costs_electricity.csv"; // MEur/GWh
 max_import_share = 0.1; // dimensionless - share of demand that can be imported
 imports_budget = max_import_share * global.total_demand_el; // imports budget over entire time horizon
 #VARIABLES
-internal: electricity_imported[T]; // GWh/h
-internal: electricity_exported[T]; // GWh/h
+external: electricity_imported[T]; // GWh/h
+external: electricity_exported[T]; // GWh/h
 external: electricity[T]; // GWh/h
 #CONSTRAINTS
 electricity_imported[t] >= 0;
@@ -887,7 +887,7 @@ lifetime = 30.0; // yr
 annualised_capex = full_capex / lifetime; // MEur/GWh_H2-yr
 fom = 0.55; // MEur/GWh_H2-yr
 vom = 0.0; // M€/(GWh/h)
-duration_ratio = 0.1; // dimensionless
+duration_ratio = 10.0; // dimensionless
 pre_installed_capacity_stock = 0.0; // GWh_H2
 pre_installed_capacity_flow = duration_ratio * pre_installed_capacity_stock; // GWh/h
 max_capacity_stock = 1000; // GWh
@@ -914,7 +914,7 @@ minimum_storage_level * (pre_installed_capacity_stock + capacity_stock) <= hydro
 hydrogen_stored[t] <= (pre_installed_capacity_stock + capacity_stock);
 hydrogen_stored[0] == hydrogen_stored[T-1];
 hydrogen_stored[t+1] == self_discharge * hydrogen_stored[t] + charge_efficiency * hydrogen_in[t] - (1 / discharge_efficiency) * hydrogen_out[t];
-(pre_installed_capacity_flow + capacity_flow) == duration_ratio * (pre_installed_capacity_stock + capacity_stock);
+duration_ratio * (pre_installed_capacity_flow + capacity_flow) == (pre_installed_capacity_stock + capacity_stock);
 hydrogen_out[t] <= (pre_installed_capacity_flow + capacity_flow);
 hydrogen_in[t] <= charge_discharge_ratio * (pre_installed_capacity_flow + capacity_flow);
 hydrogen[t] == -hydrogen_in[t] + hydrogen_out[t];
@@ -932,7 +932,7 @@ fom = 0.0; // MEur/kt-yr
 vom = 0.0; // MEur/kt
 pre_installed_capacity = 0.0; // kt
 max_capacity_stock = 100.0 * global.max_carbon_dioxide_storage_capacity_multiplier; // kt
-duration_ratio = 0.2; // dimensionless
+duration_ratio = 5.0; // dimensionless
 charge_discharge_ratio = 1.0; // dimensionless
 charge_efficiency = 1.0; // dimensionless
 discharge_efficiency = 1.0; // dimensionless
@@ -954,7 +954,7 @@ capacity_stock <= max_capacity_stock;
 carbon_dioxide_stored[0] == carbon_dioxide_stored[T-1];
 carbon_dioxide_stored[t] <= capacity_stock;
 carbon_dioxide_stored[t+1] == self_discharge * carbon_dioxide_stored[t] + charge_efficiency * carbon_dioxide_in[t] - (1 / discharge_efficiency) * carbon_dioxide_out[t];
-capacity_flow == duration_ratio * capacity_stock;
+duration_ratio * capacity_flow == capacity_stock;
 carbon_dioxide_out[t] <= capacity_flow;
 carbon_dioxide_in[t] <= charge_discharge_ratio * capacity_flow;
 carbon_dioxide[t] == -carbon_dioxide_in[t] + carbon_dioxide_out[t];
