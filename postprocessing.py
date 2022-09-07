@@ -50,20 +50,24 @@ class PostProcess:
         return sum(self.rs['SMR_w_PCCC.SMR.hydrogen'])/(self.rs['SMR_w_PCCC.SMR.capacity'][0]*self.T)
 
     @property
+    def ng_smr_cons(self):
+        return sum(self.rs['SMR_w_PCCC.natural_gas'])
+
+    @property
     def exported_co2(self):
         return sum(self.rs['CARBON_DIOXIDE_EXPORTS.carbon_dioxide'])
 
     @property
     def ocgt_cf(self):
-        return sum(self.rs['OCGT_w_PCCC.OCGT.electricity'])/(self.rs['OCGT_w_PCCC.OCGT.capacity'][0]*self.T)
+        return 100 * sum(self.rs['OCGT_w_PCCC.OCGT.electricity'])/(self.rs['OCGT_w_PCCC.OCGT.capacity'][0]*self.T)
 
     @property
     def ccgt_cf(self):
-        return sum(self.rs['CCGT_w_PCCC.CCGT.electricity'])/(self.rs['CCGT_w_PCCC.CCGT.capacity'][0]*self.T)
+        return 100 * sum(self.rs['CCGT_w_PCCC.CCGT.electricity'])/(self.rs['CCGT_w_PCCC.CCGT.capacity'][0]*self.T)
 
     @property
     def ccgt_net_cf(self):
-        return sum(self.rs['CCGT_w_PCCC.electricity'])/(self.rs['CCGT_w_PCCC.CCGT.capacity'][0]*self.T)
+        return 100 * sum(self.rs['CCGT_w_PCCC.electricity'])/(self.rs['CCGT_w_PCCC.CCGT.capacity'][0]*self.T)
 
     @property
     def solar_pv_cost(self):
@@ -127,7 +131,7 @@ class PostProcess:
     @property
     def ncpp_cost(self):
         fom_cost = self.rs['NUCLEAR_POWER_PLANTS.fom_cost'][0]
-        fuel_cost = self.rs['NUCLEAR_POWER_PLANTS.fuel_cost']
+        fuel_cost = self.rs['NUCLEAR_POWER_PLANTS.fuel_cost'][0]
         non_fuel_vom_cost = self.rs['NUCLEAR_POWER_PLANTS.non_fuel_vom_cost'][0]
         return fom_cost + fuel_cost + non_fuel_vom_cost
 
@@ -165,7 +169,7 @@ class PostProcess:
     def chp_cost(self):
         fom_cost = self.rs['CHP_PLANTS_w_PCCC.CHP_PLANTS.fom_cost'][0]
         non_fuel_vom_cost = self.rs['CHP_PLANTS_w_PCCC.CHP_PLANTS.non_fuel_vom_cost'][0]
-        return inv_cost + non_fuel_vom_cost
+        return fom_cost + non_fuel_vom_cost
 
     @property
     def pccc_chp_cost(self):
@@ -292,7 +296,7 @@ class PostProcess:
         return self.rs['NATURAL_GAS_DEMAND_RESPONSE.load_shedding_cost'][0]
 
     @property
-    def ens_h2_cost(self):
+    def ens_st(self):
         return self.rs['HYDROGEN_DEMAND_RESPONSE.load_shedding_cost'][0]
 
     @property
@@ -305,7 +309,7 @@ class PostProcess:
 
     @property
     def demand_el_tr(self):
-        return sum(self.rs['global.demand_el_tr'])
+        return sum(self.rs['global.demand_el_ev'][0:int(self.T/24)])
 
     @property
     def demand_el(self):
@@ -325,19 +329,19 @@ class PostProcess:
 
     @property
     def demand_ng_ht(self):
-        return sum(self.rs['heat_demand_natural_gas'])
+        return sum(self.rs['links.heat_demand_natural_gas'])
 
     @property
     def demand_ng_id(self):
-        return sum(self.rs['industry_demand_natural_gas'])
+        return sum(self.rs['links.industry_demand_natural_gas'])
 
     @property
     def demand_ng_tr(self):
-        return sum(self.rs['transport_demand_natural_gas'])
+        return sum(self.rs['links.transport_demand_natural_gas'])
 
     @property
     def legacy_demand_ng_smr(self):
-        return sum(self.rs['legacy_SMR_demand_natural_gas'])
+        return sum(self.rs['links.legacy_SMR_demand_natural_gas'])
 
     @property
     def demand_ng(self):
@@ -360,31 +364,37 @@ class PostProcess:
         return sum(self.rs['NATURAL_GAS_DEMAND_RESPONSE.load_shedding'])
 
     @property
+    def av_ng_import_cost(self):
+        return self.rs['NATURAL_GAS_IMPORTS.import_cost'].mean()
+
+    @property
     def el_cost(self):
         res_cost = self.solar_pv_cost + self.onshore_wind_cost + self.offshore_wind_cost
         gt_cost = self.ocgt_w_pccc_cost + self.ccgt_w_pccc_cost
         pol_disp_cost = self.wpp_w_pccc_cost + self.bmpp_w_pccc_cost + self.chp_w_pccc_cost
         clean_disp_cost = self.h2_fc_cost + self.ncpp_cost
-        stor_cost = self.battery_cost + self.phs_cost
+        stor_cost = self.bs_cost + self.phs_cost
         imports_cost = self.el_imports_cost
         cost = res_cost + gt_cost + pol_disp_cost + clean_disp_cost + stor_cost + imports_cost
-        return cost / (demand_el - ens_el)
+        return 1000 * (cost / (self.demand_el - self.ens_el))
 
     @property
     def h2_cost(self):
-        prod_cost = self.SMR_w_PCCC_cost + self.electrolysis_cost
+        feed_cost = self.ng_smr_cons * self.av_ng_import_cost
+        tech_cost = self.smr_w_pccc_cost + self.electrolysis_cost
+        prod_cost = feed_cost + tech_cost
         stor_cost = self.h2s_cost
         imports_cost = self.h2_imports_cost
         cost = prod_cost + stor_cost + imports_cost
-        return cost / (demand_h2 - ens_h2)
+        return 1000 * (cost / (self.demand_h2 - self.ens_h2))
 
     @property
     def ng_cost(self):
         prod_cost = self.methanation_cost
         stor_cost = self.ngs_cost
-        imports_cost = self.ng_imports_cost
+        imports_cost = self.ng_imports_cost - (self.ng_smr_cons * self.av_ng_import_cost)
         cost = prod_cost + stor_cost + imports_cost
-        return cost / (demand_ng - ens_ng)
+        return 1000 * (cost / (self.demand_ng - self.ens_ng))
 
     @property
     def co2_cost(self):
@@ -393,4 +403,4 @@ class PostProcess:
         stor_cost = self.co2s_cost
         exports_cost = self.co2_exports_cost
         cost = pccc_cost + dac_cost + stor_cost + exports_cost
-        return cost / co2_exported
+        return 1000 * (cost / self.co2_exported)

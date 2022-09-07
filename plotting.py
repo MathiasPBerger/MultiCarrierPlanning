@@ -1,14 +1,8 @@
 from matplotlib import pyplot as plt
 import pandas as pd
-#import matplotlib.dates as mdates
 from matplotlib.ticker import NullFormatter
 from matplotlib.dates import MonthLocator, DateFormatter, DayLocator
 from datetime import datetime, timedelta
-
-## TIME INDICES
-
-n_h = 43800
-n_d = 1825
 
 ## PLOT 1: daily electricity, natural gas and hydrogen demands
 
