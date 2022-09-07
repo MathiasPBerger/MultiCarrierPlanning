@@ -344,6 +344,10 @@ class PostProcess:
         return self.demand_ng_ht + self.demand_ng_id + self.demand_ng_tr - self.legacy_demand_ng_smr
 
     @property
+    def co2_exported(self):
+        return sum(self.rs['CARBON_DIOXIDE_EXPORTS.carbon_dioxide'])
+
+    @property
     def ens_el(self):
         return sum(self.rs['ELECTRICAL_DEMAND_RESPONSE.load_shedding'])
 
@@ -381,3 +385,12 @@ class PostProcess:
         imports_cost = self.ng_imports_cost
         cost = prod_cost + stor_cost + imports_cost
         return cost / (demand_ng - ens_ng)
+
+    @property
+    def co2_cost(self):
+        pccc_cost = self.pccc_wpp_cost + self.pccc_bmpp_cost + self.pccc_chp_cost + self.pccc_ocgt_cost + self.pccc_ccgt_cost
+        dac_cost = self.dac_cost
+        stor_cost = self.co2s_cost
+        exports_cost = self.co2_exports_cost
+        cost = pccc_cost + dac_cost + stor_cost + exports_cost
+        return cost / co2_exported
