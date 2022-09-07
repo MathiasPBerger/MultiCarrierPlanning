@@ -97,29 +97,83 @@ offshore_wind_cf = rs['OFFSHORE_WIND_PLANTS.capacity_factor']
 # plt.ylabel('Capacity Factor [-]')
 # plt.show()
 
+# h_index = [h for h in range(43800)]
+# h_dates = list()
+# h_dates.append(datetime.strptime('2014-01-01', '%Y-%m-%d'))
+# for h in h_index[1:]:
+#     h_dates.append(h_dates[0] + timedelta(hours = h))
+#
+# labels = ['Solar PV', 'Onshore Wind', 'Offshore Wind']
+# colors = ['gold', 'seagreen', 'royalblue']
+#
+# fig2,(ax1,ax2,ax3,ax4) = plt.subplots(1,4,sharey=True, facecolor='w')
+# ax1.plot(h_dates, solar_pv_cf, color=colors[0], label=labels[0])
+# ax1.plot(h_dates, onshore_wind_cf, color=colors[1], label=labels[1])
+# ax1.plot(h_dates, offshore_wind_cf, color=colors[2], label=labels[2])
+# ax1.xaxis.set_minor_locator(DayLocator(interval=2))
+# ax1.xaxis.set_major_formatter(DateFormatter('%d/%m'))
+# ax1.tick_params(axis='x', rotation=90)
+# ax1.set_xlim(h_dates[216], h_dates[384])
+# ax1.set_ylabel('Capacity Factors [-]', fontsize=15)
+# ax1.spines['right'].set_visible(False)
+# ax1.set_yticks([0.0, 0.2, 0.4, 0.6, 0.8, 1.0])
+# ax2.plot(h_dates, solar_pv_cf, color=colors[0], label=labels[0])
+# ax2.plot(h_dates, onshore_wind_cf, color=colors[1], label=labels[1])
+# ax2.plot(h_dates, offshore_wind_cf, color=colors[2], label=labels[2])
+# ax2.xaxis.set_minor_locator(DayLocator(interval=2))
+# ax2.xaxis.set_major_formatter(DateFormatter('%d/%m'))
+# ax2.tick_params(axis='x', rotation=90)
+# ax2.set_xlim(h_dates[2376], h_dates[2544])
+# ax2.spines['left'].set_visible(False)
+# ax2.spines['right'].set_visible(False)
+# ax2.tick_params(axis='y', color='w')
+# ax3.plot(h_dates, solar_pv_cf, color=colors[0], label=labels[0])
+# ax3.plot(h_dates, onshore_wind_cf, color=colors[1], label=labels[1])
+# ax3.plot(h_dates, offshore_wind_cf, color=colors[2], label=labels[2])
+# ax3.xaxis.set_minor_locator(DayLocator(interval=2))
+# ax3.xaxis.set_major_formatter(DateFormatter('%d/%m'))
+# ax3.tick_params(axis='x', rotation=90)
+# ax3.tick_params(axis='y', color='w')
+# ax3.set_xlim(h_dates[4560], h_dates[4728])
+# ax3.spines['left'].set_visible(False)
+# ax3.spines['right'].set_visible(False)
+# ax3.legend(loc='upper right', fontsize=10)
+# ax4.plot(h_dates, solar_pv_cf, color=colors[0], label=labels[0])
+# ax4.plot(h_dates, onshore_wind_cf, color=colors[1], label=labels[1])
+# ax4.plot(h_dates, offshore_wind_cf, color=colors[2], label=labels[2])
+# ax4.xaxis.set_minor_locator(DayLocator(interval=2))
+# ax4.xaxis.set_major_formatter(DateFormatter('%d/%m'))
+# ax4.tick_params(axis='x', rotation=90)
+# ax4.tick_params(axis='y', color='w')
+# ax4.set_xlim(h_dates[6768], h_dates[6936])
+# ax4.spines['left'].set_visible(False)
+# plt.show()
+
+## PLOT 3: hydrogen imports capacity
+
+path = 'results/results_scenario1.csv'
+rs = pd.read_csv(path)
+
+h2_import_capacity = rs['HYDROGEN_IMPORTS.capacity']
+
 h_index = [h for h in range(43800)]
 h_dates = list()
 h_dates.append(datetime.strptime('2014-01-01', '%Y-%m-%d'))
 for h in h_index[1:]:
     h_dates.append(h_dates[0] + timedelta(hours = h))
 
-labels = ['Solar PV', 'Onshore Wind', 'Offshore Wind']
-colors = ['gold', 'seagreen', 'royalblue']
+colors = ['grey']
 
 fig2,(ax1,ax2,ax3,ax4) = plt.subplots(1,4,sharey=True, facecolor='w')
-ax1.plot(h_dates, solar_pv_cf, color=colors[0], label=labels[0])
-ax1.plot(h_dates, onshore_wind_cf, color=colors[1], label=labels[1])
-ax1.plot(h_dates, offshore_wind_cf, color=colors[2], label=labels[2])
+ax1.plot(h_dates, h2_import_capacity, color=colors[0])
 ax1.xaxis.set_minor_locator(DayLocator(interval=2))
 ax1.xaxis.set_major_formatter(DateFormatter('%d/%m'))
 ax1.tick_params(axis='x', rotation=90)
 ax1.set_xlim(h_dates[216], h_dates[384])
-ax1.set_ylabel('Capacity Factors [-]', fontsize=15)
+ax1.set_ylabel('Import Capacity [GWh/h]', fontsize=15)
 ax1.spines['right'].set_visible(False)
-ax1.set_yticks([0., 0.2, 0.4, 0.6, 0.8, 1.])
-ax2.plot(h_dates, solar_pv_cf, color=colors[0], label=labels[0])
-ax2.plot(h_dates, onshore_wind_cf, color=colors[1], label=labels[1])
-ax2.plot(h_dates, offshore_wind_cf, color=colors[2], label=labels[2])
+ax1.set_yticks([0.0, 1.75, 3.5, 5.25, 7.0])
+ax2.plot(h_dates, h2_import_capacity, color=colors[0])
 ax2.xaxis.set_minor_locator(DayLocator(interval=2))
 ax2.xaxis.set_major_formatter(DateFormatter('%d/%m'))
 ax2.tick_params(axis='x', rotation=90)
@@ -127,20 +181,16 @@ ax2.set_xlim(h_dates[2376], h_dates[2544])
 ax2.spines['left'].set_visible(False)
 ax2.spines['right'].set_visible(False)
 ax2.tick_params(axis='y', color='w')
-ax3.plot(h_dates, solar_pv_cf, color=colors[0], label=labels[0])
-ax3.plot(h_dates, onshore_wind_cf, color=colors[1], label=labels[1])
-ax3.plot(h_dates, offshore_wind_cf, color=colors[2], label=labels[2])
+ax3.plot(h_dates, h2_import_capacity, color=colors[0])
 ax3.xaxis.set_minor_locator(DayLocator(interval=2))
 ax3.xaxis.set_major_formatter(DateFormatter('%d/%m'))
 ax3.tick_params(axis='x', rotation=90)
 ax3.tick_params(axis='y', color='w')
 ax3.set_xlim(h_dates[4560], h_dates[4728])
+#ax3.set_title('Hydrogen Tanker Schedule')
 ax3.spines['left'].set_visible(False)
 ax3.spines['right'].set_visible(False)
-ax3.legend(loc='upper right', fontsize=10)
-ax4.plot(h_dates, solar_pv_cf, color=colors[0], label=labels[0])
-ax4.plot(h_dates, onshore_wind_cf, color=colors[1], label=labels[1])
-ax4.plot(h_dates, offshore_wind_cf, color=colors[2], label=labels[2])
+ax4.plot(h_dates, h2_import_capacity, color=colors[0])
 ax4.xaxis.set_minor_locator(DayLocator(interval=2))
 ax4.xaxis.set_major_formatter(DateFormatter('%d/%m'))
 ax4.tick_params(axis='x', rotation=90)
@@ -148,9 +198,6 @@ ax4.tick_params(axis='y', color='w')
 ax4.set_xlim(h_dates[6768], h_dates[6936])
 ax4.spines['left'].set_visible(False)
 plt.show()
-
-## PLOT 3: hydrogen imports capacity
-
 
 ## PLOT 4: plant capacities
 
