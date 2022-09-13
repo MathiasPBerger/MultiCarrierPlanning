@@ -1,6 +1,6 @@
-plots_class.py
-plots_paper.py
+misc/
 *__*
 *.pyc
 *gurobi*
 results/
+dual_test.txt
