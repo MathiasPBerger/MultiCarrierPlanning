@@ -9,11 +9,11 @@ demand_el_base = import "../data/base_demand_electricity.csv"; // GWh/h - hourly
 demand_el_ht = import "../data/heat_demand_electricity.csv"; // GWh/h - hourly electricity heat demand
 demand_el_ev = import "../data/ev_consumption.csv"; // GWh - daily electricity demand for EV charging
 total_demand_el = sum(demand_el_base[h] for h in [0:T-1]) + sum(demand_el_ht[h] for h in [0:T-1]) + sum(demand_el_ev[d] for d in [0:number_days_horizon-1]);
-max_capacity_DAC = 0.0; // kt/h; set to 100.0 for S4->5
-max_capacity_PCCC = 0.0; // kt/h; set to 100.0 for S3->5
-max_RES_capacity_multiplier = 1.0; // dimensionless; set to 10.0 for S5
+max_capacity_DAC = 100.0; // kt/h; set to 100.0 for S4->5
+max_capacity_PCCC = 100.0; // kt/h; set to 100.0 for S3->5
+max_RES_capacity_multiplier = 10.0; // dimensionless; set to 10.0 for S5
 max_nuclear_capacity_multiplier = 0.0; // dimensionless; set to 1.0 for S2
-max_carbon_dioxide_storage_capacity_multiplier = 0.0; // dimensionlees; set to 1.0 for S3->5
+max_carbon_dioxide_storage_capacity_multiplier = 1.0; // dimensionlees; set to 1.0 for S3->5
 carbon_dioxide_emissions_cost = 0.08; // MEur/kt (i.e., 80 €/ton)
 
 #NODE SOLAR_PV_PLANTS

@@ -171,10 +171,7 @@ class PostProcess:
         fom_cost = self.rs[node_id+'fom_cost'][0]
         fuel_cost = self.rs[node_id+'fuel_cost'][0]
         non_fuel_vom_cost = self.rs[node_id+'non_fuel_vom_cost'][0]
-        if rs[node_id+'pre_installed_capacity'][0] > 1e-3:
-            return fom_cost + fuel_cost + non_fuel_vom_cost
-        else:
-            return 0.0
+        return fom_cost + fuel_cost + non_fuel_vom_cost
 
     @property
     def ng_imports_cost(self):
@@ -490,7 +487,7 @@ class PostProcess:
         demand_mt = sum(self.rs['METHANATION_PLANTS.hydrogen'])
         demand_h2_fc = sum(self.rs['HYDROGEN_FUEL_CELLS.hydrogen'])
         demand = self.demand_h2_exo + demand_mt + demand_h2_fc
-        return 1000 * (cost / (self.demand_h2_exo - self.ens_h2))
+        return 1000 * (cost / (demand - self.ens_h2))
 
     @property
     def ng_cost(self):
