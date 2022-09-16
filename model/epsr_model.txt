@@ -790,7 +790,7 @@ max_capacity_stock = 5000; // GWh
 charge_efficiency = 0.92; // dimensionless
 discharge_efficiency = 0.92; // dimensionless
 minimum_storage_level = 0.0; // dimensionless
-self_discharge = 0.999; // dimensionless
+self_discharge = 0.001; // dimensionless
 charge_discharge_ratio = 0.5; // dimensionless - fraction of the power capacity limiting the amount of electricity that can be charged in 1 hour
 #VARIABLES
 external: electricity[T]; // GW
@@ -810,7 +810,7 @@ pre_installed_capacity_flow + capacity_flow <= max_capacity_flow;
 electricity_stored[0] == electricity_stored[T-1];
 minimum_storage_level * (pre_installed_capacity_stock + capacity_stock) <= electricity_stored[t];
 electricity_stored[t] <= (pre_installed_capacity_stock + capacity_stock);
-electricity_stored[t+1] == self_discharge * electricity_stored[t] + charge_efficiency * electricity_charged[t] - (1 / discharge_efficiency) * electricity_discharged[t];
+electricity_stored[t+1] == (1 - self_discharge) * electricity_stored[t] + charge_efficiency * electricity_charged[t] - (1 / discharge_efficiency) * electricity_discharged[t];
 electricity_discharged[t] <= (pre_installed_capacity_flow + capacity_flow);
 charge_efficiency * electricity_charged[t] <= charge_discharge_ratio * (pre_installed_capacity_flow + capacity_flow);
 electricity[t] == -electricity_charged[t] + electricity_discharged[t];
@@ -828,7 +828,8 @@ pre_installed_capacity_stock = 5.3; // GWh
 charge_efficiency = 0.9; // dimensionless
 discharge_efficiency = 0.9; // dimensionless
 minimum_storage_level = 0.0; // dimensionless
-self_discharge = 1.0; // dimensionless
+charge_discharge_ratio = 1.0;
+self_discharge = 0.0; // dimensionless
 #VARIABLES
 external: electricity[T]; // GW
 internal: electricity_charged[T]; // GW
@@ -841,8 +842,8 @@ electricity_stored[t] >= 0;
 electricity_stored[0] == electricity_stored[T-1];
 minimum_storage_level * pre_installed_capacity_stock <= electricity_stored[t];
 electricity_stored[t] <= pre_installed_capacity_stock;
-electricity_stored[t+1] == self_discharge * electricity_stored[t] + charge_efficiency * electricity_charged[t] - (1 / discharge_efficiency) * electricity_discharged[t];
-electricity_charged[t] <= pre_installed_capacity_flow;
+electricity_stored[t+1] == (1 - self_discharge) * electricity_stored[t] + charge_efficiency * electricity_charged[t] - (1 / discharge_efficiency) * electricity_discharged[t];
+electricity_charged[t] <= charge_discharge_ratio * pre_installed_capacity_flow;
 electricity_discharged[t] <= pre_installed_capacity_flow;
 electricity[t] == -electricity_charged[t] + electricity_discharged[t];
 #OBJECTIVES
@@ -858,7 +859,7 @@ pre_installed_capacity_flow = 7.0;  // GWh/h
 charge_efficiency = 0.987; // dimensionless - some gas is burnt to power compressors
 discharge_efficiency = 1.0; // dimensionless - no energy is required to release gas
 minimum_storage_level = 0.0; // dimensionless
-self_discharge = 1.0; // dimensionless
+self_discharge = 0.0; // dimensionless
 charge_discharge_ratio = 0.5; // dimensionless
 #VARIABLES
 external: natural_gas[T]; // GWh/h
@@ -872,7 +873,7 @@ natural_gas_stored[t]>= 0;
 natural_gas_stored[0] == natural_gas_stored[T-1];
 minimum_storage_level * pre_installed_capacity_stock <= natural_gas_stored[t];
 natural_gas_stored[t] <= pre_installed_capacity_stock;
-natural_gas_stored[t+1] == self_discharge * natural_gas_stored[t] + charge_efficiency * natural_gas_in[t] - (1 / discharge_efficiency) * natural_gas_out[t];
+natural_gas_stored[t+1] == (1 - self_discharge) * natural_gas_stored[t] + charge_efficiency * natural_gas_in[t] - (1 / discharge_efficiency) * natural_gas_out[t];
 natural_gas_out[t] <= pre_installed_capacity_flow;
 natural_gas_in[t] <= charge_discharge_ratio * pre_installed_capacity_flow;
 natural_gas[t] == -natural_gas_in[t] + natural_gas_out[t];
@@ -894,7 +895,7 @@ max_capacity_stock = 1000; // GWh
 charge_efficiency = 1.0; // dimensionless
 discharge_efficiency = 1.0; // dimensionless
 minimum_storage_level = 0.0; // dimensionless
-self_discharge = 1.0; // dimensionless
+self_discharge = 0.0; // dimensionless
 charge_discharge_ratio = 1.0; // dimensionless
 #VARIABLES
 internal: capacity_stock; // GWh_H2
@@ -913,7 +914,7 @@ pre_installed_capacity_stock + capacity_stock <= max_capacity_stock;
 minimum_storage_level * (pre_installed_capacity_stock + capacity_stock) <= hydrogen_stored[t];
 hydrogen_stored[t] <= (pre_installed_capacity_stock + capacity_stock);
 hydrogen_stored[0] == hydrogen_stored[T-1];
-hydrogen_stored[t+1] == self_discharge * hydrogen_stored[t] + charge_efficiency * hydrogen_in[t] - (1 / discharge_efficiency) * hydrogen_out[t];
+hydrogen_stored[t+1] == (1 - self_discharge) * hydrogen_stored[t] + charge_efficiency * hydrogen_in[t] - (1 / discharge_efficiency) * hydrogen_out[t];
 duration_ratio * (pre_installed_capacity_flow + capacity_flow) == (pre_installed_capacity_stock + capacity_stock);
 hydrogen_out[t] <= (pre_installed_capacity_flow + capacity_flow);
 hydrogen_in[t] <= charge_discharge_ratio * (pre_installed_capacity_flow + capacity_flow);
@@ -936,7 +937,7 @@ duration_ratio = 5.0; // dimensionless
 charge_discharge_ratio = 1.0; // dimensionless
 charge_efficiency = 1.0; // dimensionless
 discharge_efficiency = 1.0; // dimensionless
-self_discharge = 1.0; // dimensionless
+self_discharge = 0.0; // dimensionless
 #VARIABLES
 internal: capacity_stock; // kt/h
 internal: capacity_flow; // kt
@@ -953,7 +954,7 @@ carbon_dioxide_stored[t] >= 0;
 capacity_stock <= max_capacity_stock;
 carbon_dioxide_stored[0] == carbon_dioxide_stored[T-1];
 carbon_dioxide_stored[t] <= capacity_stock;
-carbon_dioxide_stored[t+1] == self_discharge * carbon_dioxide_stored[t] + charge_efficiency * carbon_dioxide_in[t] - (1 / discharge_efficiency) * carbon_dioxide_out[t];
+carbon_dioxide_stored[t+1] == (1 - self_discharge) * carbon_dioxide_stored[t] + charge_efficiency * carbon_dioxide_in[t] - (1 / discharge_efficiency) * carbon_dioxide_out[t];
 duration_ratio * capacity_flow == capacity_stock;
 carbon_dioxide_out[t] <= capacity_flow;
 carbon_dioxide_in[t] <= charge_discharge_ratio * capacity_flow;

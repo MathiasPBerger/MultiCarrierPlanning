@@ -184,9 +184,15 @@ class PostProcess:
         return self.rs[node_id+'imports_cost'][0]
 
     @property
-    def el_imports_cost(self):
+    def el_net_imports_cost(self):
         node_id = 'ELECTRICITY_INTERCONNECTION.'
         return self.rs[node_id+'imports_cost'][0]
+
+    @property
+    def el_imports_cost(self):
+        node_id = 'ELECTRICITY_INTERCONNECTION.'
+        return sum(self.rs[node_id+'electricity_imported']
+                   * self.rs[node_id+'import_cost'])
 
     @property
     def co2_exports_cost(self):
@@ -560,3 +566,18 @@ class PostProcess:
             return (tech_cost + feed_cost) / produced_volume
         else:
             return 0.0
+
+    @property
+    def system_cost(self):
+        return (self.wpp_w_pccc_cost + self.bmpp_w_pccc_cost
+                + self.chp_w_pccc_cost + self.ocgt_w_pccc_cost
+                + self.ccgt_w_pccc_cost + self.smr_w_pccc_cost
+                + self.solar_pv_cost + self.onshore_wind_cost
+                + self.offshore_wind_cost + self.co2s_cost
+                + self.h2s_cost + self.ngs_cost + self.bs_cost
+                + self.dac_cost + self.ng_imports_cost
+                + self.h2_imports_cost + self.el_net_imports_cost
+                + self.electrolysis_cost + self.methanation_cost
+                + self.h2_fc_cost + self.phs_cost + self.ncpp_cost
+                + self.ens_el_cost + self.ens_ng_cost + self.ens_h2_cost
+                + self.co2_exports_cost)
