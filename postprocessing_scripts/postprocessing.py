@@ -30,6 +30,26 @@ class PostProcess:
                 + self.offshore_wind_generation)
 
     @property
+    def res_capacity(self):
+        return (self.rs['SOLAR_PV_PLANTS.capacity'][0]
+                + self.rs['ONSHORE_WIND_PLANTS.capacity'][0]
+                + self.rs['OFFSHORE_WIND_PLANTS.capacity'][0])
+    @property
+    def dispatchable_capacity(self):
+        return (self.rs['OCGT_w_PCCC.OCGT.capacity'][0]
+                + self.rs['CCGT_w_PCCC.CCGT.capacity'][0]
+                + self.rs['CHP_PLANTS_w_PCCC.CHP_PLANTS.pre_installed_capacity'][0]
+                + self.rs['BIOMASS_POWER_PLANTS_w_PCCC.BIOMASS_POWER_PLANTS.pre_installed_capacity'][0]
+                + self.rs['WASTE_POWER_PLANTS_w_PCCC.WASTE_POWER_PLANTS.pre_installed_capacity'][0]
+                + self.rs['NUCLEAR_POWER_PLANTS.pre_installed_capacity'][0]
+                + self.rs['HYDROGEN_FUEL_CELLS.capacity'][0])
+
+    @property
+    def storage_power_capacity(self):
+        return (self.rs['BATTERY_STORAGE.capacity_flow'][0]
+                + self.rs['PUMPED_HYDRO_STORAGE.pre_installed_capacity_flow'][0])
+
+    @property
     def solar_PV_curtailment(self):
         node_id = 'SOLAR_PV_PLANTS.'
         max_gen = (sum(self.rs[node_id+'capacity_factor']
@@ -80,7 +100,7 @@ class PostProcess:
             return 0.0
 
     @property
-    def ccgt_cf(self):
+    def ccgt_raw_cf(self):
         node_id = 'CCGT_w_PCCC.CCGT.'
         if self.rs[node_id+'capacity'][0] > 1e-3:
             return (100 * sum(self.rs[node_id+'electricity'])
@@ -94,6 +114,54 @@ class PostProcess:
         if self.rs[node_id+'CCGT.capacity'][0] > 1e-3:
             return (100 * sum(self.rs[node_id+'electricity'])
                     / (self.rs[node_id+'CCGT.capacity'][0] * self.T))
+        else:
+            return 0.0
+
+    @property
+    def ccgt_net_generation(self):
+        node_id = 'CCGT_w_PCCC.'
+        return sum(self.rs[node_id+'electricity'])
+
+    @property
+    def ccgt_raw_generation(self):
+        node_id = 'CCGT_w_PCCC.CCGT.'
+        if self.rs[node_id+'capacity'][0] > 1e-3:
+            return sum(self.rs[node_id+'electricity'])
+        else:
+            return 0.0
+
+
+    @property
+    def h2_fc_cf(self):
+        node_id = 'HYDROGEN_FUEL_CELLS.'
+        if self.rs[node_id+'capacity'][0] > 1e-3:
+            return (100 * sum(self.rs[node_id+'electricity'])
+                    / (self.rs[node_id+'capacity'][0] * self.T))
+        else:
+            return 0.0
+
+    @property
+    def h2_fc_generation(self):
+        node_id = 'HYDROGEN_FUEL_CELLS.'
+        if self.rs[node_id+'capacity'][0] > 1e-3:
+            return sum(self.rs[node_id+'electricity'])
+        else:
+            return 0.0
+
+    @property
+    def el_cf(self):
+        node_id = 'ELECTROLYSIS_PLANTS.'
+        if self.rs[node_id+'capacity'][0] > 1e-3:
+            return (100 * sum(self.rs[node_id+'electricity'])
+                    / (self.rs[node_id+'capacity'][0] * self.T))
+        else:
+            return 0.0
+
+    @property
+    def el_h2_production(self):
+        node_id = 'ELECTROLYSIS_PLANTS.'
+        if self.rs[node_id+'capacity'][0] > 1e-3:
+            return sum(self.rs[node_id+'hydrogen'])
         else:
             return 0.0
 

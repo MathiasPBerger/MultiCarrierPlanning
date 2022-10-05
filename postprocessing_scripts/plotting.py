@@ -12,12 +12,13 @@ show_cf = False
 show_h2_imp = False
 show_stor_op = False
 show_ng_bal = False
-show_gen_capas = True
-show_stor_capas = True
-show_gas_prod_capas = True
-show_ev_charge_dist = True
+show_gen_capas = False
+show_stor_capas = False
+show_gas_prod_capas = False
+show_ev_charge_dist = False
+show_elec_cost = True
 
-## PLOT 1: daily electricity, natural gas and hydrogen demands
+## PLOT 1: daily electricity, methane and hydrogen demands
 
 if show_demand:
     n_h = 43800
@@ -30,7 +31,7 @@ if show_demand:
     for d in d_index[1:]:
         d_dates.append(d_dates[0] + timedelta(days = d))
 
-    path_scen1 = 'results/results_scenario1_cplex.csv'
+    path_scen1 = 'results/results_cplex_scenario1.csv'
     rs1 = pd.read_csv(path_scen1)
 
     demand_el_base = rs1['global.demand_el_base']
@@ -61,7 +62,7 @@ if show_demand:
 
     fig1 = plt.figure()
     ax = plt.gca()
-    labels = ['Electricity', 'Natural Gas', 'Hydrogen']
+    labels = ['Electricity', 'Methane', 'Hydrogen']
     colors = ['gold', 'salmon', 'lightblue']
     ax.fill_between(d_dates, d_demand_el[d_st:d_nd+1], color=colors[0], label=labels[0], alpha=.75)
     ax.fill_between(d_dates, d_demand_ng[d_st:d_nd+1], color=colors[1], label=labels[1], alpha=.55)
@@ -70,15 +71,15 @@ if show_demand:
     ax.xaxis.set_minor_locator(MonthLocator(bymonthday=15))
     ax.xaxis.set_major_formatter(NullFormatter())
     ax.xaxis.set_minor_formatter(DateFormatter('%b'))
-    ax.legend(loc='upper center', ncol=3, fontsize=10)
+    ax.legend(loc='upper center', ncol=3, fontsize=9)
     ax.set_xlim(d_dates[0], d_dates[-1])
-    plt.ylabel('Energy Demand [GWh/day]')
+    plt.ylabel('Energy Demand [GWh/day]', fontsize=10)
     plt.show()
 
 ## PLOT 2: capacity factors
 
 if show_cf:
-    path = 'results/results_scenario1_cplex.csv'
+    path = 'results/results_cplex_scenario1.csv'
     rs = pd.read_csv(path)
 
     solar_pv_cf = rs['SOLAR_PV_PLANTS.capacity_factor']
@@ -140,7 +141,7 @@ if show_cf:
 ## PLOT 3: hydrogen imports capacity
 
 if show_h2_imp:
-    path = 'results/results_scenario1_cplex.csv'
+    path = 'results/results_cplex_scenario1.csv'
     rs = pd.read_csv(path)
 
     h2_import_capacity = rs['HYDROGEN_IMPORTS.capacity']
@@ -198,31 +199,31 @@ if show_stor_op:
     for h in h_index[1:]:
         h_dates.append(h_dates[0] + timedelta(hours = h))
 
-    path_scen2 = 'results/results_scenario2_cplex.csv'
+    path_scen2 = 'results/results_cplex_scenario2.csv'
     rs2 = pd.read_csv(path_scen2)
 
     bs_soc = rs2['BATTERY_STORAGE.electricity_stored']
     h2s_soc = rs2['HYDROGEN_STORAGE.hydrogen_stored']
     ng_soc = rs2['NATURAL_GAS_STORAGE.natural_gas_stored']
 
-    ttl_fnt = 10
+    fnt = 10
 
     fig5 = plt.figure()
     colors = ['gold', 'lightblue', 'salmon']
     ax1 = plt.subplot(311)
     ax1.fill_between(h_dates, bs_soc[h_st:h_nd+1], color=colors[0], alpha=.55)
-    ax1.set_title('Battery Storage', fontsize=ttl_fnt)
+    ax1.set_title('Battery Storage', fontsize=fnt)
     ax1.set_yticks([0, 20, 40])
     ax1.axes.get_xaxis().set_visible(False)
     ax2 = plt.subplot(312, sharex=ax1)
     ax2.fill_between(h_dates, h2s_soc[h_st:h_nd+1], color=colors[1], alpha=.65)
-    ax2.set_title('Hydrogen Storage', fontsize=ttl_fnt)
+    ax2.set_title('Hydrogen Storage', fontsize=fnt)
     ax2.axes.get_xaxis().set_visible(False)
-    ax2.set_ylabel('State of Charge [GWh]')
+    ax2.set_ylabel('State of Charge [GWh]', fontsize=fnt)
     ax2.set_yticks([0, 100, 200, 300])
     ax3 = plt.subplot(313, sharex=ax1)
     ax3.fill_between(h_dates, ng_soc[h_st:h_nd+1], color=colors[2], alpha=.75)
-    ax3.set_title('Natural Gas Storage', fontsize=ttl_fnt)
+    ax3.set_title('Methane Storage', fontsize=fnt)
     ax3.set_yticks([0, 2500, 5000, 7500])
     ax3.xaxis.set_major_locator(MonthLocator())
     ax3.xaxis.set_minor_locator(MonthLocator(bymonthday=15))
@@ -231,10 +232,10 @@ if show_stor_op:
     ax3.set_xlim(h_dates[0], h_dates[-1])
     plt.show()
 
-# PLOT 5: natural gas balance
+# PLOT 5: methane balance
 
 if show_ng_bal:
-    path = 'results_scenario3_cplex.csv'
+    path = 'results_cplex_scenario3.csv'
     rs = pd.read_csv(path)
     tmp = list(rs['NATURAL_GAS_STORAGE.natural_gas'])
     ngsp = np.zeros(len(tmp))
@@ -253,7 +254,7 @@ if show_ng_bal:
     plt.fill_between(rs.index, -rs['links.heat_demand_natural_gas']-rs['links.industry_demand_natural_gas']+rs['links.legacy_SMR_demand_natural_gas']-rs['links.transport_demand_natural_gas']-rs['SMR_w_PCCC.natural_gas']-rs['CHP_PLANTS_w_PCCC.natural_gas']-rs['CCGT_w_PCCC.natural_gas']-rs['OCGT_w_PCCC.natural_gas']-ngsm)
     plt.show()
 
-## PLOT 6: power generation capacity
+## PLOT 6A: power generation capacity
 
 if show_gen_capas:
     name = 'results/results_cplex_scenario'
@@ -301,6 +302,67 @@ if show_gen_capas:
 
     ax.set_ylabel('Capacity [GW]', fontsize=10)
     ax.set_ylim(bottom=0.0, top=32.5)
+    ax.legend(ncol=3, fontsize=9)
+
+    plt.show()
+
+## PLOT 6B: power generation capacity with RES
+
+if show_gen_capas:
+    name = 'results/results_cplex_scenario'
+    nr = [str(i+1) for i in range(5)]
+    ext = '.csv'
+    files = [name+n+ext for n in nr]
+    rss = [pd.read_csv(f) for f in files]
+
+    pv, won, woff, ccgt, ocgt, fc, nk, bm, wst, chp, bt, phs = [], [], [], [], [], [], [], [], [], [], [], []
+    bpv, bwon, bwoff, bwst, bchp, bccgt, bocgt, bfc, bnk, bbt, bphs = [], [], [], [], [], [], [], [], [], [], []
+    for rs in rss:
+        bm.append(rs['BIOMASS_POWER_PLANTS_w_PCCC.BIOMASS_POWER_PLANTS.pre_installed_capacity'][0])
+        wst.append(rs['WASTE_POWER_PLANTS_w_PCCC.WASTE_POWER_PLANTS.pre_installed_capacity'][0])
+        bwst.append(bm[-1])
+        chp.append(rs['CHP_PLANTS_w_PCCC.CHP_PLANTS.pre_installed_capacity'][0])
+        bchp.append(bwst[-1]+wst[-1])
+        nk.append(rs['NUCLEAR_POWER_PLANTS.pre_installed_capacity'][0])
+        bnk.append(bchp[-1]+chp[-1])
+        ccgt.append(rs['CCGT_w_PCCC.CCGT.capacity'][0])
+        bccgt.append(bnk[-1]+nk[-1])
+        ocgt.append(rs['OCGT_w_PCCC.OCGT.capacity'][0])
+        bocgt.append(bccgt[-1]+ccgt[-1])
+        fc.append(rs['HYDROGEN_FUEL_CELLS.capacity'][0])
+        bfc.append(bocgt[-1]+ocgt[-1])
+        pv.append(rs['SOLAR_PV_PLANTS.capacity'][0])
+        bpv.append(bfc[-1]+fc[-1])
+        won.append(rs['ONSHORE_WIND_PLANTS.capacity'][0])
+        bwon.append(bpv[-1]+pv[-1])
+        woff.append(rs['OFFSHORE_WIND_PLANTS.capacity'][0])
+        bwoff.append(bwon[-1]+won[-1])
+        bt.append(rs['BATTERY_STORAGE.capacity_flow'][0])
+        bbt.append(bwoff[-1]+woff[-1])
+        phs.append(rs['PUMPED_HYDRO_STORAGE.pre_installed_capacity_flow'][0])
+        bphs.append(bbt[-1]+bt[-1])
+
+
+    labels = ['Scenario 1', 'Scenario 2', 'Scenario 3', 'Scenario 4', 'Scenario 5']
+    width = 0.35   # the width of the bars: can also be len(x) sequence
+
+    fig, ax = plt.subplots()
+
+    ax.bar(labels, bm, width, label='Biomass', color='yellowgreen')
+    ax.bar(labels, wst, width, bottom=bwst, label='Waste', color='grey')
+    ax.bar(labels, chp, width, bottom=bchp, label='CHP', color='pink')
+    ax.bar(labels, nk, width, bottom=bnk, label='Nuclear', color='khaki')
+    ax.bar(labels, ccgt, width, bottom=bccgt, label='CCGT', color='salmon')
+    ax.bar(labels, ocgt, width, bottom=bocgt, label='OCGT', color='lightsalmon')
+    ax.bar(labels, fc, width, bottom=bfc, label='Fuel Cells', color='lightblue')
+    ax.bar(labels, pv, width, bottom=bpv, label='Solar PV', color='gold')
+    ax.bar(labels, won, width, bottom=bwon, label='Onshore Wind', color='seagreen')
+    ax.bar(labels, woff, width, bottom=bwoff, label='Offshore Wind', color='royalblue')
+    ax.bar(labels, bt, width, bottom=bbt, label='Battery', color='yellow')
+    ax.bar(labels, phs, width, bottom=bphs, label='Pumped-Hydro', color='dodgerblue')
+
+    ax.set_ylabel('Capacity [GW]', fontsize=10)
+#    ax.set_ylim(bottom=0.0, top=32.5)
     ax.legend(ncol=3, fontsize=9)
 
     plt.show()
@@ -423,5 +485,41 @@ if show_ev_charge_dist:
     ax1.set_ylabel('Empirical Cumulative Probability [-]', fontsize=10)
     ax1.yaxis.set_label_coords(-0.1, 0.35)
     ax2.set_xlabel('EV Charge [GW]', fontsize=10)
+
+    plt.show()
+
+## PLOT 10: electricity cost
+
+if show_elec_cost:
+    name = 'results/results_cplex_scenario'
+    nr = [str(i+1) for i in range(5)]
+    ext = '.csv'
+    files = [name+n+ext for n in nr]
+    rss = [pd.read_csv(f) for f in files]
+
+    h_index = [h for h in range(43800)]
+    h_st, h_nd = h_index[0], h_index[-1]
+    h_dates = list()
+    h_dates.append(datetime.strptime('2014-01-01', '%Y-%m-%d'))
+    for h in h_index[1:]:
+        h_dates.append(h_dates[0] + timedelta(hours = h))
+
+    key = 'links.power_balance.dual'
+
+    fig, (ax1, ax2, ax3, ax4, ax5) = plt.subplots(5, 1, sharex=True)
+    ax1.plot(h_dates, 1000 * rss[0][key])
+    ax1.axes.get_xaxis().set_visible(False)
+    ax2.plot(h_dates, 1000 * rss[1][key])
+    ax2.axes.get_xaxis().set_visible(False)
+    ax3.plot(h_dates, 1000 * rss[2][key])
+    ax3.axes.get_xaxis().set_visible(False)
+    ax4.plot(h_dates, 1000 * rss[3][key])
+    ax4.axes.get_xaxis().set_visible(False)
+    ax5.plot(h_dates, 1000 * rss[4][key])
+    ax5.xaxis.set_major_locator(MonthLocator())
+    ax5.xaxis.set_minor_locator(MonthLocator(bymonthday=15))
+    ax5.xaxis.set_major_formatter(NullFormatter())
+    ax5.xaxis.set_minor_formatter(DateFormatter('%b'))
+    ax5.set_xlim(h_dates[0], h_dates[8759])
 
     plt.show()
