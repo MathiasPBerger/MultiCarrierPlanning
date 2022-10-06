@@ -86,6 +86,11 @@ class PostProcess:
                 / (self.rs[node_id+'capacity'][0] * self.T))
 
     @property
+    def smr_h2_production(self):
+        node_id = 'SMR_w_PCCC.SMR'
+        return sum(self.rs[node_id+'hydrogen'])
+
+    @property
     def ng_smr_cons(self):
         node_id = 'SMR_w_PCCC.'
         return sum(self.rs[node_id+'natural_gas'])
